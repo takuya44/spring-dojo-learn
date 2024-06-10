@@ -13,6 +13,13 @@ public class ArticleRestController {
   /**
    * 指定されたIDの記事を表示します。
    *
+   * <p>具体例:
+   * <pre>{@code
+   * // URL: http://localhost:8080/articles/1
+   * // レスポンス: "This is article: id = 1"
+   * }</pre>
+   * </p>
+   *
    * @param id 表示する記事のID
    * @return 指定されたIDの記事を表す文字列
    */
