@@ -1,6 +1,6 @@
 package com.example.blog.web.controller.article;
 
-import java.time.LocalDateTime;
+import com.example.blog.service.article.ArticleService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 public class ArticleRestController {
+
+  private final ArticleService articleService = new ArticleService();
 
   /**
    * 指定されたIDの記事を表示します。
@@ -33,12 +35,13 @@ public class ArticleRestController {
    */
   @GetMapping("/articles/{id}")
   public ArticleDTO showArticle(@PathVariable("id") long id) {
+    var entity = articleService.findById(id);
     return new ArticleDTO(
-        id,
-        "This is title: id = " + id,
-        "This is content",
-        LocalDateTime.now(),
-        LocalDateTime.now()
+        entity.id(),
+        entity.title(),
+        entity.content(),
+        entity.createdAt(),
+        entity.updatedAt()
     );
   }
 }
