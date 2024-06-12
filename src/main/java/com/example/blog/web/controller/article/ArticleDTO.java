@@ -1,5 +1,6 @@
 package com.example.blog.web.controller.article;
 
+import com.example.blog.service.article.ArticleEntity;
 import java.time.LocalDateTime;
 
 /**
@@ -22,4 +23,19 @@ public record ArticleDTO(
     LocalDateTime updatedAt
 ) {
 
+  /**
+   * ArticleEntityからArticleDTOを作成します。
+   *
+   * @param entity ArticleEntityオブジェクト
+   * @return ArticleDTOオブジェクト
+   */
+  public static ArticleDTO from(ArticleEntity entity) {
+    return new ArticleDTO(
+        entity.id(),
+        entity.title(),
+        entity.content(),
+        entity.createdAt(),
+        entity.updatedAt()
+    );
+  }
 }
