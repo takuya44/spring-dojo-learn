@@ -13,7 +13,11 @@ import org.springframework.web.server.ResponseStatusException;
 @RestController
 public class ArticleRestController {
 
-  private final ArticleService articleService = new ArticleService();
+  private final ArticleService articleService;
+
+  public ArticleRestController(ArticleService articleService) {
+    this.articleService = articleService;
+  }
 
   /**
    * 指定されたIDの記事を表示します。
