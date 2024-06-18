@@ -1,11 +1,16 @@
 package com.example.blog.service.article;
 
-import java.time.LocalDateTime;
+import com.example.blog.repository.article.ArticleRepository;
 import java.util.Optional;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+
 @Service
+@RequiredArgsConstructor
 public class ArticleService {
+
+  private final ArticleRepository articleRepository;
 
   /**
    * 指定されたIDの記事を検索します。
@@ -14,14 +19,6 @@ public class ArticleService {
    * @return 指定されたIDの記事を含むOptional<ArticleEntity>オブジェクト
    */
   public Optional<ArticleEntity> findById(long id) {
-    // TODO 最終的にはDBから取得する
-
-    return Optional.of(new ArticleEntity(
-        id,
-        "title",
-        "content",
-        LocalDateTime.now(),
-        LocalDateTime.now()
-    ));
+    return articleRepository.selectById(id);
   }
 }
