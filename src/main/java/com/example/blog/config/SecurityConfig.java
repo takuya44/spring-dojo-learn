@@ -1,5 +1,6 @@
 package com.example.blog.config;
 
+import com.example.blog.web.filter.JsonUsernamePasswordAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -10,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -19,6 +21,12 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http
+        .csrf(csrf -> csrf.ignoringRequestMatchers("/login"))
+        // カスタム認証フィルタを既存のUsernamePasswordAuthenticationFilterの位置に追加
+        .addFilterAt(
+            new JsonUsernamePasswordAuthenticationFilter(),
+            UsernamePasswordAuthenticationFilter.class
+        )
         // 全てのリクエストに対して認証が必要であることを指定
         .authorizeHttpRequests((authorize) -> authorize
             .requestMatchers("/articles/**").permitAll()
