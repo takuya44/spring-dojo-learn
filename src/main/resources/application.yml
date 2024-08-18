@@ -6,3 +6,4 @@ spring:
 logging:
   level:
     com.example.blog.repository: DEBUG
+    org.springframework.security: TRACE
