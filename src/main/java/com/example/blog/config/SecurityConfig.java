@@ -12,6 +12,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextRepository;
 
 @Configuration
 @EnableWebSecurity
@@ -19,14 +21,16 @@ public class SecurityConfig {
 
   // セキュリティの設定を定義するメソッド
   @Bean
-  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+  public SecurityFilterChain securityFilterChain(HttpSecurity http,
+      SecurityContextRepository securityContextRepository) throws Exception {
     http
         .csrf(csrf -> csrf.ignoringRequestMatchers("/login"))
         // カスタム認証フィルタを既存のUsernamePasswordAuthenticationFilterの位置に追加
         .addFilterAt(
-            new JsonUsernamePasswordAuthenticationFilter(),
+            new JsonUsernamePasswordAuthenticationFilter(securityContextRepository),
             UsernamePasswordAuthenticationFilter.class
         )
+        .securityContext(context -> context.securityContextRepository(securityContextRepository))
         // 全てのリクエストに対して認証が必要であることを指定
         .authorizeHttpRequests((authorize) -> authorize
             .requestMatchers("/articles/**").permitAll()
@@ -37,6 +41,13 @@ public class SecurityConfig {
 
     // HttpSecurityビルダーを使用してセキュリティ設定を適用し、SecurityFilterChainを返す
     return http.build();
+  }
+
+  @Bean
+  public SecurityContextRepository securityContextRepository() {
+    // セキュリティコンテキストをHTTPセッションに保存
+    // ユーザーが一度認証されると、その認証情報がセッションを通じて保持され、認証済みの状態が維持される
+    return new HttpSessionSecurityContextRepository();
   }
 
   // ユーザー認証に使用するユーザー情報を提供するメソッド
