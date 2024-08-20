@@ -13,7 +13,18 @@ public class JsonUsernamePasswordAuthenticationFilter extends UsernamePasswordAu
   public JsonUsernamePasswordAuthenticationFilter(
       SecurityContextRepository securityContextRepository) {
     super();
+    // SecurityContextRepositoryを設定:例
     setSecurityContextRepository(securityContextRepository);
+
+    // 認証成功時の処理を設定
+    setAuthenticationSuccessHandler((request, response, authentication) -> {
+      response.setStatus(HttpServletResponse.SC_OK);
+    });
+
+    // 認証失敗時の処理を設定
+    setAuthenticationFailureHandler((request, response, authentication) -> {
+      response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+    });
   }
 
 
