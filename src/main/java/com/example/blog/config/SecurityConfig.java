@@ -12,6 +12,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.session.ChangeSessionIdAuthenticationStrategy;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 
@@ -22,12 +24,14 @@ public class SecurityConfig {
   // セキュリティの設定を定義するメソッド
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http,
-      SecurityContextRepository securityContextRepository) throws Exception {
+      SecurityContextRepository securityContextRepository,
+      SessionAuthenticationStrategy sessionAuthenticationStrategy) throws Exception {
     http
         .csrf(csrf -> csrf.ignoringRequestMatchers("/login"))
         // カスタム認証フィルタを既存のUsernamePasswordAuthenticationFilterの位置に追加
         .addFilterAt(
-            new JsonUsernamePasswordAuthenticationFilter(securityContextRepository),
+            new JsonUsernamePasswordAuthenticationFilter(securityContextRepository,
+                sessionAuthenticationStrategy),
             UsernamePasswordAuthenticationFilter.class
         )
         .securityContext(context -> context.securityContextRepository(securityContextRepository))
@@ -41,6 +45,12 @@ public class SecurityConfig {
 
     // HttpSecurityビルダーを使用してセキュリティ設定を適用し、SecurityFilterChainを返す
     return http.build();
+  }
+
+  @Bean
+  public SessionAuthenticationStrategy sessionAuthenticationStrategy() {
+    // 認証成功時にセッションIDを変更する：セッション固定攻撃を防ぐために使用
+    return new ChangeSessionIdAuthenticationStrategy();
   }
 
   @Bean

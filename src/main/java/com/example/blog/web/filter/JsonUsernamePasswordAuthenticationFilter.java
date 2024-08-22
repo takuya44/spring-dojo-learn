@@ -6,15 +6,20 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
 
 public class JsonUsernamePasswordAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
   public JsonUsernamePasswordAuthenticationFilter(
-      SecurityContextRepository securityContextRepository) {
+      SecurityContextRepository securityContextRepository,
+      SessionAuthenticationStrategy sessionAuthenticationStrategy) {
     super();
     // SecurityContextRepositoryを設定:例
     setSecurityContextRepository(securityContextRepository);
+
+    // セッション認証戦略を設定: 認証成功後のセッション管理を設定
+    setSessionAuthenticationStrategy(sessionAuthenticationStrategy);
 
     // 認証成功時の処理を設定
     setAuthenticationSuccessHandler((request, response, authentication) -> {
