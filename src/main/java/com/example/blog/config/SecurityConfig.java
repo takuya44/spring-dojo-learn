@@ -2,6 +2,7 @@ package com.example.blog.config;
 
 import com.example.blog.web.filter.CsrfCookieFilter;
 import com.example.blog.web.filter.JsonUsernamePasswordAuthenticationFilter;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -34,7 +35,7 @@ public class SecurityConfig {
   public SecurityFilterChain securityFilterChain(HttpSecurity http,
       SecurityContextRepository securityContextRepository,
       SessionAuthenticationStrategy sessionAuthenticationStrategy,
-      AuthenticationManager authenticationManager) throws Exception {
+      AuthenticationManager authenticationManager, ObjectMapper objectMapper) throws Exception {
     http
         .csrf((csrf) -> csrf
             // CSRFトークンをCookieに格納し、HttpOnly属性を無効にする設定
@@ -47,7 +48,7 @@ public class SecurityConfig {
         // カスタム認証フィルタを既存のUsernamePasswordAuthenticationFilterの位置に追加
         .addFilterAt(
             new JsonUsernamePasswordAuthenticationFilter(securityContextRepository,
-                sessionAuthenticationStrategy, authenticationManager),
+                sessionAuthenticationStrategy, authenticationManager, objectMapper),
             UsernamePasswordAuthenticationFilter.class
         )
         .securityContext(context -> context.securityContextRepository(securityContextRepository))

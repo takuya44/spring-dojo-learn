@@ -15,11 +15,17 @@ import org.springframework.security.web.context.SecurityContextRepository;
 
 public class JsonUsernamePasswordAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
 
+  private final ObjectMapper objectMapper;
+
+
   public JsonUsernamePasswordAuthenticationFilter(
       SecurityContextRepository securityContextRepository,
       SessionAuthenticationStrategy sessionAuthenticationStrategy,
-      AuthenticationManager authenticationManager) {
+      AuthenticationManager authenticationManager, ObjectMapper objectMapper) {
     super();
+
+    this.objectMapper = objectMapper;
+
     // SecurityContextRepositoryを設定:例
     setSecurityContextRepository(securityContextRepository);
 
@@ -45,7 +51,7 @@ public class JsonUsernamePasswordAuthenticationFilter extends UsernamePasswordAu
   public Authentication attemptAuthentication(HttpServletRequest request,
       HttpServletResponse response) throws AuthenticationException {
 
-    var objectMapper = new ObjectMapper();
+    // var objectMapper = new ObjectMapper();
     LoginRequest jsonRequest;
 
     try {
