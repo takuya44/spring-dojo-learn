@@ -3,6 +3,7 @@ package com.example.blog.config;
 import com.example.blog.web.filter.CsrfCookieFilter;
 import com.example.blog.web.filter.JsonUsernamePasswordAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -54,7 +55,11 @@ public class SecurityConfig {
             .requestMatchers("/").permitAll()
             .requestMatchers("/articles/**").permitAll()
             .anyRequest().authenticated()
-        );
+        )
+        // アクセス拒否時のハンドリング
+        .exceptionHandling(customizer -> customizer.accessDeniedHandler((req, res, ex) -> {
+          res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        }));
 
     // HttpSecurityビルダーを使用してセキュリティ設定を適用し、SecurityFilterChainを返す
     return http.build();
