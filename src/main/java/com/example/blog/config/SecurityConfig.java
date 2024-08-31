@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -53,6 +54,7 @@ public class SecurityConfig {
         // 全てのリクエストに対して認証が必要であることを指定
         .authorizeHttpRequests((authorize) -> authorize
             .requestMatchers("/").permitAll()
+            .requestMatchers(HttpMethod.POST, "/users").permitAll()
             .requestMatchers("/articles/**").permitAll()
             .anyRequest().authenticated()
         )
