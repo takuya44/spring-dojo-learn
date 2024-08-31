@@ -59,8 +59,12 @@ public class SecurityConfig {
             .anyRequest().authenticated()
         )
         // アクセス拒否時のハンドリング
-        .exceptionHandling(customizer -> customizer.accessDeniedHandler((req, res, ex) -> {
+        .exceptionHandling(customizer -> customizer.accessDeniedHandler((req, res, auth) -> {
           res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        }))
+        // ログアウト処理
+        .logout(logout -> logout.logoutSuccessHandler((req, res, auth) -> {
+          res.setStatus(HttpServletResponse.SC_OK);
         }));
 
     // HttpSecurityビルダーを使用してセキュリティ設定を適用し、SecurityFilterChainを返す
