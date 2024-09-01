@@ -16,6 +16,42 @@ public class RegistrationAndLoginIT {
 
   @Test
   public void integrationTest() {
+    // ユーザー登録
+    var xsrfToken = getRoot();
+
+    // ログイン失敗
+    // Cookie に XSRF-TOKEN がない
+    // ヘッダーに X-XSRF-TOKEN がない
+    // Cookie の XSRF-TOKEN とヘッダーの X-XSRF-TOKEN の値が異なる
+    // ユーザー名が存在しない
+    // パスワードがデータベースに保存されているパスワードと違う
+    // ログイン成功
+    // ユーザー名がデータベースに存在する
+    // パスワードがデータベースに保存されているパスワードと一致する
+    // Cookie の XSRF-TOKEN とヘッダーの X-XSRF-TOKEN の値が一致する
+    // → 200 OK が返る
+    // → レスポンスに Set-Cookie: JSESSIONID が返ってくる
+
+  }
+
+
+  /**
+   * ルートエンドポイントに対してリクエストを送信し、XSRF-TOKENクッキーの値を取得する。
+   *
+   * <p>このメソッドは、次の手順で実行されます:
+   * <ul>
+   *   <li>ルートエンドポイント ("/") へのGETリクエストを送信</li>
+   *   <li>レスポンスからXSRF-TOKENクッキーを取得</li>
+   *   <li>ステータスコードが204 No Contentであることを検証</li>
+   *   <li>XSRF-TOKENクッキーが存在し、その値が空でないことを検証</li>
+   *   <li>検証が成功した場合、XSRF-TOKENクッキーの値を返す</li>
+   * </ul>
+   * </p>
+   *
+   * @return 取得したXSRF-TOKENクッキーの値
+   * @throws AssertionError XSRF-TOKENが存在しない、または値が空である場合
+   */
+  private String getRoot() {
     // ## Arrange ##
 
     // ## Act ##
@@ -35,5 +71,7 @@ public class RegistrationAndLoginIT {
                 assertThat(xsrfTokenCookie.getValue()).isNotBlank()
             // Optional<xsrfTokenCookie = "aaa">の値が空文字かどうかチェック。
         );
+
+    return xsrfTokenOpt.get().getValue();
   }
 }
