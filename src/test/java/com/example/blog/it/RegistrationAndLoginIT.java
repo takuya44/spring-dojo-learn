@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -18,6 +19,7 @@ public class RegistrationAndLoginIT {
   public void integrationTest() {
     // ユーザー登録
     var xsrfToken = getRoot();
+    register(xsrfToken);
 
     // ログイン失敗
     // Cookie に XSRF-TOKEN がない
@@ -73,5 +75,42 @@ public class RegistrationAndLoginIT {
         );
 
     return xsrfTokenOpt.get().getValue();
+  }
+
+  /**
+   * 新しいユーザーを登録するためのメソッド。
+   *
+   * <p>このメソッドは、次の手順で実行されます:
+   * <ul>
+   *   <li>ユーザー名とパスワードを含むJSONボディを作成</li>
+   *   <li>POSTリクエストを /users エンドポイントに対して送信</li>
+   *   <li>リクエストにXSRF-TOKENクッキーとヘッダーを含める</li>
+   *   <li>ステータスコードが201 Createdであることを検証</li>
+   * </ul>
+   * </p>
+   *
+   * @param xsrfToken XSRFトークンの値。リクエストのクッキーとヘッダーに使用される。
+   * @throws AssertionError ステータスコードが201 Createdでない場合
+   */
+  private void register(String xsrfToken) {
+    // ## Arrange ##
+    var bodyJson = """
+        {
+          "username": "user10",
+          "password": "password1"
+        }
+        """;
+
+    // ## Act ##
+    var responseSpec = webTestClient
+        .post().uri("/users")
+        .contentType(MediaType.APPLICATION_JSON)
+        .cookie("XSRF-TOKEN", xsrfToken)
+        .header("X-XSRF-TOKEN", xsrfToken)
+        .bodyValue(bodyJson)
+        .exchange();
+
+    // ## Assert ##
+    responseSpec.expectStatus().isCreated();
   }
 }
