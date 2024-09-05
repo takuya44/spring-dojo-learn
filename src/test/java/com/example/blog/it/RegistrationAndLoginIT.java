@@ -2,7 +2,10 @@ package com.example.blog.it;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.example.blog.service.user.UserService;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -17,6 +20,19 @@ public class RegistrationAndLoginIT {
 
   @Autowired
   private WebTestClient webTestClient;
+
+  @Autowired
+  public UserService userService;
+
+  @BeforeEach
+  public void beforeEach() {
+    userService.delete(TEST_USERNAME);
+  }
+
+  @AfterEach
+  public void afterEach() {
+    userService.delete(TEST_USERNAME);
+  }
 
   @Test
   public void integrationTest() {
