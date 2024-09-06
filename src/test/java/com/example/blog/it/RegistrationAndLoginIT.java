@@ -136,6 +136,24 @@ public class RegistrationAndLoginIT {
     responseSpec.expectStatus().isCreated();
   }
 
+  /**
+   * ログイン成功時のテストを行うメソッド。
+   *
+   * <p>このメソッドは、ユーザー名とパスワードを用いてログインリクエストを送信し、XSRFトークンとセッションIDが適切に処理されることを検証します。</p>
+   *
+   * <p>具体的には、次の手順を行います:
+   * <ul>
+   *   <li>ユーザー名とパスワードを含むJSONリクエストボディを作成</li>
+   *   <li>POSTリクエストを /login エンドポイントに対して送信</li>
+   *   <li>XSRFトークンとJSESSIONIDをクッキーおよびヘッダーに設定してリクエスト</li>
+   *   <li>ステータスコードが200 OKであることを検証</li>
+   *   <li>レスポンスに含まれる新しいJSESSIONIDが空でなく、ダミーのセッションIDと異なることを検証</li>
+   * </ul>
+   * </p>
+   *
+   * @param xsrfToken XSRFトークンの値。リクエストのクッキーとヘッダーに使用される。
+   * @throws AssertionError ステータスコードが200 OKでない場合、またはJSESSIONIDの値が期待通りでない場合
+   */
   private void loginSuccess(String xsrfToken) {
     // ## Arrange ##
     var bodyJson = String.format("""
