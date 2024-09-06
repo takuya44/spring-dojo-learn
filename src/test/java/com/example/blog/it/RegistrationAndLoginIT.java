@@ -43,6 +43,8 @@ public class RegistrationAndLoginIT {
 
     // ログイン失敗
     // Cookie に XSRF-TOKEN がない
+    loginFailure_NoXSRFTokenInCookie(xsrfToken);
+
     // ヘッダーに X-XSRF-TOKEN がない
     // Cookie の XSRF-TOKEN とヘッダーの X-XSRF-TOKEN の値が異なる
     // ユーザー名が存在しない
@@ -181,4 +183,49 @@ public class RegistrationAndLoginIT {
             .isNotEqualTo(DUMMY_SESSION_ID)
         );
   }
+
+  /**
+   * XSRFトークンがCookieに設定されていない場合のログイン失敗をテストするメソッド。
+   *
+   * <p>このメソッドは、XSRFトークンがCookieに存在しない場合、ログインリクエストが拒否されることを検証します。</p>
+   *
+   * <p>具体的には、次の手順を行います:
+   * <ul>
+   *   <li>ユーザー名とパスワードを含むJSONリクエストボディを作成</li>
+   *   <li>POSTリクエストを /login エンドポイントに対して送信</li>
+   *   <li>クッキーにXSRF-TOKENを設定せず、ヘッダーにのみXSRFトークンを設定</li>
+   *   <li>JSESSIONIDをクッキーに設定</li>
+   *   <li>ステータスコードが403 Forbiddenであることを検証</li>
+   * </ul>
+   * </p>
+   *
+   * @param xsrfToken XSRFトークンの値。リクエストのヘッダーに使用されるが、クッキーには含まれない。
+   * @throws AssertionError ステータスコードが403 Forbiddenでない場合
+   */
+  private void loginFailure_NoXSRFTokenInCookie(String xsrfToken) {
+    // ## Arrange ##
+    var bodyJson = String.format("""
+        {
+          "username": "%s",
+          "password": "%s"
+        }
+        """, TEST_USERNAME, TEST_PASSWORD);
+
+    // ## Act ##
+    var responseSpec = webTestClient
+        .post().uri("/login")
+        .contentType(MediaType.APPLICATION_JSON)
+        /*
+        .cookie("XSRF-TOKEN", xsrfToken)
+        */
+        .cookie("JSESSIONID", DUMMY_SESSION_ID)
+        .header("X-XSRF-TOKEN", xsrfToken)
+        .bodyValue(bodyJson)
+        .exchange();
+
+    // ## Assert ##
+    responseSpec
+        .expectStatus().isForbidden();
+  }
+
 }
