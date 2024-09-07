@@ -7,3 +7,9 @@ logging:
   level:
     com.example.blog.repository: DEBUG
     org.springframework.security: TRACE
+    org.springframework.data.redis: TRACE
+    org.springframework.session: TRACE
+server:
+  servlet:
+    session:
+      timeout: 30s # 実験用にとても短い30秒に設定、システム要件に合わせて変更する。
