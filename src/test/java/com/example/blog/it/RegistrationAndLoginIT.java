@@ -49,6 +49,8 @@ public class RegistrationAndLoginIT {
     loginFailure_NoXSRFTokenInHeader(xsrfToken);
 
     // Cookie の XSRF-TOKEN とヘッダーの X-XSRF-TOKEN の値が異なる
+    loginFailure_DifferentToken(xsrfToken);
+
     // ユーザー名が存在しない
     // パスワードがデータベースに保存されているパスワードと違う
 
@@ -274,5 +276,47 @@ public class RegistrationAndLoginIT {
         .expectStatus().isForbidden();
   }
 
+  /**
+   * クッキーに設定されたXSRFトークンとヘッダーに設定されたXSRFトークンが異なる場合のログイン失敗をテストするメソッド。
+   *
+   * <p>このメソッドは、クッキーに含まれるXSRFトークンとヘッダーに送信されるXSRFトークンが異なる場合に、
+   * ログインリクエストが拒否されることを検証します。</p>
+   *
+   * <p>具体的には、次の手順を行います:
+   * <ul>
+   *   <li>ユーザー名とパスワードを含むJSONリクエストボディを作成</li>
+   *   <li>POSTリクエストを /login エンドポイントに対して送信</li>
+   *   <li>クッキーにXSRF-TOKENを設定し、ヘッダーには異なる値のXSRF-TOKENを設定</li>
+   *   <li>JSESSIONIDをクッキーに設定</li>
+   *   <li>ステータスコードが403 Forbiddenであることを検証</li>
+   * </ul>
+   * </p>
+   *
+   * @param xsrfToken クッキーに設定されるXSRFトークンの値。ヘッダーにはこれと異なる値が使用される。
+   * @throws AssertionError ステータスコードが403 Forbiddenでない場合
+   */
+  private void loginFailure_DifferentToken(String xsrfToken) {
+    // ## Arrange ##
+    var bodyJson = String.format("""
+        {
+          "username": "%s",
+          "password": "%s"
+        }
+        """, TEST_USERNAME, TEST_PASSWORD);
+
+    // ## Act ##
+    var responseSpec = webTestClient
+        .post().uri("/login")
+        .contentType(MediaType.APPLICATION_JSON)
+        .cookie("XSRF-TOKEN", xsrfToken)
+        .cookie("JSESSIONID", DUMMY_SESSION_ID)
+        .header("X-XSRF-TOKEN", xsrfToken + "_invalid")
+        .bodyValue(bodyJson)
+        .exchange();
+
+    // ## Assert ##
+    responseSpec
+        .expectStatus().isForbidden();
+  }
 
 }
