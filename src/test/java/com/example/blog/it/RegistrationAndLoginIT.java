@@ -18,6 +18,7 @@ public class RegistrationAndLoginIT {
   private static final String TEST_USERNAME = "user99";
   private static final String TEST_PASSWORD = "password1";
   private static final String DUMMY_SESSION_ID = "session_id_1";
+  private static final String SESSION_COOKIE_NAME = "SESSION";
 
   @Autowired
   private WebTestClient webTestClient;
@@ -63,7 +64,7 @@ public class RegistrationAndLoginIT {
     // パスワードがデータベースに保存されているパスワードと一致する
     // Cookie の XSRF-TOKEN とヘッダーの X-XSRF-TOKEN の値が一致する
     // → 200 OK が返る
-    // → レスポンスに Set-Cookie: JSESSIONID が返ってくる
+    // → レスポンスに Set-Cookie: SESSION_COOKIE_NAME が返ってくる
 
   }
 
@@ -154,14 +155,14 @@ public class RegistrationAndLoginIT {
    * <ul>
    *   <li>ユーザー名とパスワードを含むJSONリクエストボディを作成</li>
    *   <li>POSTリクエストを /login エンドポイントに対して送信</li>
-   *   <li>XSRFトークンとJSESSIONIDをクッキーおよびヘッダーに設定してリクエスト</li>
+   *   <li>XSRFトークンとSESSION_COOKIE_NAMEをクッキーおよびヘッダーに設定してリクエスト</li>
    *   <li>ステータスコードが200 OKであることを検証</li>
-   *   <li>レスポンスに含まれる新しいJSESSIONIDが空でなく、ダミーのセッションIDと異なることを検証</li>
+   *   <li>レスポンスに含まれる新しいSESSION_COOKIE_NAMEが空でなく、ダミーのセッションIDと異なることを検証</li>
    * </ul>
    * </p>
    *
    * @param xsrfToken XSRFトークンの値。リクエストのクッキーとヘッダーに使用される。
-   * @throws AssertionError ステータスコードが200 OKでない場合、またはJSESSIONIDの値が期待通りでない場合
+   * @throws AssertionError ステータスコードが200 OKでない場合、またはSESSION_COOKIE_NAMEの値が期待通りでない場合
    */
   private void loginSuccess(String xsrfToken) {
     // ## Arrange ##
@@ -177,7 +178,7 @@ public class RegistrationAndLoginIT {
         .post().uri("/login")
         .contentType(MediaType.APPLICATION_JSON)
         .cookie("XSRF-TOKEN", xsrfToken)
-        .cookie("JSESSIONID", DUMMY_SESSION_ID)
+        .cookie(SESSION_COOKIE_NAME, DUMMY_SESSION_ID)
         .header("X-XSRF-TOKEN", xsrfToken)
         .bodyValue(bodyJson)
         .exchange();
@@ -185,7 +186,7 @@ public class RegistrationAndLoginIT {
     // ## Assert ##
     responseSpec
         .expectStatus().isOk()
-        .expectCookie().value("JSESSIONID", v -> assertThat(v)
+        .expectCookie().value(SESSION_COOKIE_NAME, v -> assertThat(v)
             .isNotBlank()
             .isNotEqualTo(DUMMY_SESSION_ID)
         );
@@ -201,7 +202,7 @@ public class RegistrationAndLoginIT {
    *   <li>ユーザー名とパスワードを含むJSONリクエストボディを作成</li>
    *   <li>POSTリクエストを /login エンドポイントに対して送信</li>
    *   <li>クッキーにXSRF-TOKENを設定せず、ヘッダーにのみXSRFトークンを設定</li>
-   *   <li>JSESSIONIDをクッキーに設定</li>
+   *   <li>SESSION_COOKIE_NAMEをクッキーに設定</li>
    *   <li>ステータスコードが403 Forbiddenであることを検証</li>
    * </ul>
    * </p>
@@ -225,7 +226,7 @@ public class RegistrationAndLoginIT {
         /*
         .cookie("XSRF-TOKEN", xsrfToken)
         */
-        .cookie("JSESSIONID", DUMMY_SESSION_ID)
+        .cookie(SESSION_COOKIE_NAME, DUMMY_SESSION_ID)
         .header("X-XSRF-TOKEN", xsrfToken)
         .bodyValue(bodyJson)
         .exchange();
@@ -245,7 +246,7 @@ public class RegistrationAndLoginIT {
    *   <li>ユーザー名とパスワードを含むJSONリクエストボディを作成</li>
    *   <li>POSTリクエストを /login エンドポイントに対して送信</li>
    *   <li>クッキーにXSRF-TOKENを設定し、ヘッダーには設定しない</li>
-   *   <li>JSESSIONIDをクッキーに設定</li>
+   *   <li>SESSION_COOKIE_NAMEをクッキーに設定</li>
    *   <li>ステータスコードが403 Forbiddenであることを検証</li>
    * </ul>
    * </p>
@@ -267,7 +268,7 @@ public class RegistrationAndLoginIT {
         .post().uri("/login")
         .contentType(MediaType.APPLICATION_JSON)
         .cookie("XSRF-TOKEN", xsrfToken)
-        .cookie("JSESSIONID", DUMMY_SESSION_ID)
+        .cookie(SESSION_COOKIE_NAME, DUMMY_SESSION_ID)
         /*
         .header("X-XSRF-TOKEN", xsrfToken)
         */
@@ -290,7 +291,7 @@ public class RegistrationAndLoginIT {
    *   <li>ユーザー名とパスワードを含むJSONリクエストボディを作成</li>
    *   <li>POSTリクエストを /login エンドポイントに対して送信</li>
    *   <li>クッキーにXSRF-TOKENを設定し、ヘッダーには異なる値のXSRF-TOKENを設定</li>
-   *   <li>JSESSIONIDをクッキーに設定</li>
+   *   <li>SESSION_COOKIE_NAMEをクッキーに設定</li>
    *   <li>ステータスコードが403 Forbiddenであることを検証</li>
    * </ul>
    * </p>
@@ -312,7 +313,7 @@ public class RegistrationAndLoginIT {
         .post().uri("/login")
         .contentType(MediaType.APPLICATION_JSON)
         .cookie("XSRF-TOKEN", xsrfToken)
-        .cookie("JSESSIONID", DUMMY_SESSION_ID)
+        .cookie(SESSION_COOKIE_NAME, DUMMY_SESSION_ID)
         .header("X-XSRF-TOKEN", xsrfToken + "_invalid")
         .bodyValue(bodyJson)
         .exchange();
@@ -332,7 +333,7 @@ public class RegistrationAndLoginIT {
    * <ul>
    *   <li>無効なユーザー名（存在しないユーザー名）と有効なパスワードを含むJSONリクエストボディを作成</li>
    *   <li>POSTリクエストを /login エンドポイントに対して送信</li>
-   *   <li>XSRF-TOKENおよびJSESSIONIDをクッキーに設定し、ヘッダーにX-XSRF-TOKENを設定</li>
+   *   <li>XSRF-TOKENおよびSESSION_COOKIE_NAMEをクッキーに設定し、ヘッダーにX-XSRF-TOKENを設定</li>
    *   <li>ステータスコードが 401 Unauthorized であることを検証</li>
    * </ul>
    * </p>
@@ -354,7 +355,7 @@ public class RegistrationAndLoginIT {
         .post().uri("/login")
         .contentType(MediaType.APPLICATION_JSON)
         .cookie("XSRF-TOKEN", xsrfToken)
-        .cookie("JSESSIONID", DUMMY_SESSION_ID)
+        .cookie(SESSION_COOKIE_NAME, DUMMY_SESSION_ID)
         .header("X-XSRF-TOKEN", xsrfToken)
         .bodyValue(bodyJson)
         .exchange();
@@ -363,7 +364,7 @@ public class RegistrationAndLoginIT {
     responseSpec
         .expectStatus().isUnauthorized();
   }
-  
+
   /**
    * データベースに存在しないパスワードが与えられた場合のログイン失敗をテストするメソッド。
    *
@@ -374,7 +375,7 @@ public class RegistrationAndLoginIT {
    * <ul>
    *   <li>有効なユーザー名と無効なパスワードを含むJSONリクエストボディを作成</li>
    *   <li>POSTリクエストを /login エンドポイントに対して送信</li>
-   *   <li>XSRF-TOKENおよびJSESSIONIDをクッキーに設定し、ヘッダーにX-XSRF-TOKENを設定</li>
+   *   <li>XSRF-TOKENおよびSESSION_COOKIE_NAMEをクッキーに設定し、ヘッダーにX-XSRF-TOKENを設定</li>
    *   <li>ステータスコードが 401 Unauthorized であることを検証</li>
    * </ul>
    * </p>
@@ -396,7 +397,7 @@ public class RegistrationAndLoginIT {
         .post().uri("/login")
         .contentType(MediaType.APPLICATION_JSON)
         .cookie("XSRF-TOKEN", xsrfToken)
-        .cookie("JSESSIONID", DUMMY_SESSION_ID)
+        .cookie(SESSION_COOKIE_NAME, DUMMY_SESSION_ID)
         .header("X-XSRF-TOKEN", xsrfToken)
         .bodyValue(bodyJson)
         .exchange();
