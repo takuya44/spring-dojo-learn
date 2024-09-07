@@ -12,4 +12,4 @@ logging:
 server:
   servlet:
     session:
-      timeout: 30s # 実験用にとても短い30秒に設定、システム要件に合わせて変更する。
+      timeout: 300s # 実験用にとても短い5分に設定、システム要件に合わせて変更する。
