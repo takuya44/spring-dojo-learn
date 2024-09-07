@@ -52,6 +52,8 @@ public class RegistrationAndLoginIT {
     loginFailure_DifferentToken(xsrfToken);
 
     // ユーザー名が存在しない
+    loginFailure_GivenUsernameDoesNotExistInDatabase(xsrfToken);
+
     // パスワードがデータベースに保存されているパスワードと違う
 
     // ログイン成功
@@ -317,6 +319,48 @@ public class RegistrationAndLoginIT {
     // ## Assert ##
     responseSpec
         .expectStatus().isForbidden();
+  }
+  
+  /**
+   * データベースに存在しないユーザー名が与えられた場合のログイン失敗をテストするメソッド。
+   *
+   * <p>このメソッドは、存在しないユーザー名を使用してログインリクエストが送信された場合に、
+   * サーバーが 401 Unauthorized エラーを返すことを検証します。</p>
+   *
+   * <p>具体的には、次の手順を行います:
+   * <ul>
+   *   <li>無効なユーザー名（存在しないユーザー名）と有効なパスワードを含むJSONリクエストボディを作成</li>
+   *   <li>POSTリクエストを /login エンドポイントに対して送信</li>
+   *   <li>XSRF-TOKENおよびJSESSIONIDをクッキーに設定し、ヘッダーにX-XSRF-TOKENを設定</li>
+   *   <li>ステータスコードが 401 Unauthorized であることを検証</li>
+   * </ul>
+   * </p>
+   *
+   * @param xsrfToken XSRFトークンの値。リクエストのクッキーとヘッダーに使用される。
+   * @throws AssertionError ステータスコードが 401 Unauthorized でない場合
+   */
+  private void loginFailure_GivenUsernameDoesNotExistInDatabase(String xsrfToken) {
+    // ## Arrange ##
+    var bodyJson = String.format("""
+        {
+          "username": "%s",
+          "password": "%s"
+        }
+        """, TEST_USERNAME + "_invalid", TEST_PASSWORD);
+
+    // ## Act ##
+    var responseSpec = webTestClient
+        .post().uri("/login")
+        .contentType(MediaType.APPLICATION_JSON)
+        .cookie("XSRF-TOKEN", xsrfToken)
+        .cookie("JSESSIONID", DUMMY_SESSION_ID)
+        .header("X-XSRF-TOKEN", xsrfToken)
+        .bodyValue(bodyJson)
+        .exchange();
+
+    // ## Assert ##
+    responseSpec
+        .expectStatus().isUnauthorized();
   }
 
 }
