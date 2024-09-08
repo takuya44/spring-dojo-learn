@@ -12,7 +12,7 @@ DELETE FROM users;
 
 -- password => "password" for all users
 INSERT INTO users (username, password, enabled)
-VALUES ('user1', '$2a$10$esd2Yc/.cTe1trzUcoKvOOlQk8tT/Het0xohjlCXBw0TG/E6HOGs.', true)
-     , ('user2', '$2a$10$t8qWABspN9FjYSjjs5pln.UlErwsZFg8UWwHtUlL.P.DRJ5rbR0p.', true)
-     , ('user3', '$2a$10$KNCI.EkZliHUbhxXBzg1F.YruuNRg0AbNmMUsZP./Qm24m5eF.6IO', true)
+VALUES ('user1', '$2a$10$yov2wEmxbog1xF0pmeoMB.HMKkSoFWuT95xrDZs8K5XLDTkvWe9ua', true)
+     , ('user2', '$2a$10$R98uxPGVBI4bmBBU5vYmC.M0ukEaIySVZUEjzjPI6vAnoeuma7juK', true)
+     , ('user3', '$2a$10$2hIkgw9SXNZ4xUWUVrqzP.cWkAVkUfvYcqRerGqNPXQ4XUSABIEJm', true)
 ;
