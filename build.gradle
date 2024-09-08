@@ -47,4 +47,8 @@ flyway {
     url = 'jdbc:mysql://localhost:3307/apidb'
     user = 'apiuser'
     password = 'apipass'
+    locations = [
+            'filesystem:src/main/resources/db/migration',
+            'filesystem:src/main/resources/db/migration_dev' // 開発用サンプルデータ
+    ]
 }
