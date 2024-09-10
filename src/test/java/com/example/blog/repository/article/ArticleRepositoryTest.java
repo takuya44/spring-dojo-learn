@@ -29,7 +29,7 @@ class ArticleRepositoryTest {
   public void test() {
     assertThat(cut).isNotNull();
   }
-  
+
   /**
    * このテストメソッドは、引数で指定されたIDの記事が存在する場合に、 {@link ArticleRepository#selectById(int)} が正しく
    * {@link ArticleEntity} を返すことを検証します。
@@ -68,5 +68,31 @@ class ArticleRepositoryTest {
           assertThat(article.createdAt()).isEqualTo("2010-10-01T00:00:00");
           assertThat(article.updatedAt()).isEqualTo("2010-11-01T00:00:00");
         });
+  }
+
+  /**
+   * このテストメソッドは、引数で指定されたIDの記事が存在しない場合に、 {@link ArticleRepository#selectById(int)} が空の
+   * {@link Optional} を返すことを検証します。
+   *
+   * <p>ここでは、IDに存在しない値（-9）を指定しています。この場合、データベース内に該当する記事は
+   * 存在しないため、{@link Optional#isEmpty()}がtrueであることを確認します。</p>
+   *
+   * <p>主な検証点は次の通りです:
+   * <ul>
+   *   <li>指定されたID (-9) に該当する記事がデータベースに存在しないこと。</li>
+   *   <li>その結果、メソッドが空のOptionalを返すことを確認する。</li>
+   * </ul>
+   * </p>
+   */
+  @Test
+  @DisplayName("selectById: 引数で指定されたIDの記事が存在しないとき、空のOptionalを返す")
+  public void selectById_returnEmpty() {
+    // ## Arrange ##
+
+    // ## Act ##
+    var actual = cut.selectById(-9);
+
+    // ## Assert ##
+    assertThat(actual).isEmpty();
   }
 }
