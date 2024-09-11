@@ -73,4 +73,30 @@ class ArticleServiceTest {
           assertThat(article.updatedAt()).isEqualTo("2010-11-01T00:00:00");
         });
   }
+
+  /**
+   * 指定されたIDの記事が存在しない場合に、{@link ArticleService#findById(int)} が 空の {@link Optional}
+   * を返すことを検証するテストメソッド。
+   *
+   * <p>このテストでは、存在しない記事のID（-9）を使って検索を行い、結果として
+   * {@link Optional#isEmpty()} が true であることを確認します。</p>
+   *
+   * <p>主な検証項目:
+   * <ul>
+   *   <li>ID -9に該当する記事が存在しないこと。</li>
+   *   <li>その結果、メソッドが {@link Optional#empty()} を返すことを確認する。</li>
+   * </ul>
+   * </p>
+   */
+  @Test
+  @DisplayName("selectById: 指定されたIDの記事が存在しないとき、Optional.emptyを返す")
+  public void findById_returnEmpty() {
+    // ## Arrange ##
+
+    // ## Act ##
+    var actual = cut.findById(-9);
+
+    // ## Assert ##
+    assertThat(actual).isEmpty(); // 該当する記事がないため、空のOptionalを期待
+  }
 }
