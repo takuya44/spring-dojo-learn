@@ -4,7 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.example.blog.repository.article.ArticleRepository;
+import java.time.LocalDateTime;
 import java.util.Optional;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -78,5 +80,49 @@ class ArticleServiceMockTest {
     // 失敗例：assertThat(articleRepository.selectById(111)).isPresent();
     // 期待値は、値ありだが、実際空。
     // Expecting Optional to contain a value but it was empty.
+  }
+
+  /**
+   * 指定されたIDの記事が存在するとき、{@link ArticleService#findById(int)} メソッドが 該当する {@link ArticleEntity}
+   * を返すことを検証するテストメソッド。
+   *
+   * <p>このテストでは、モックされた {@link ArticleRepository} が ID 999 の記事を返すように設定されています。
+   * テストは、返された {@link Optional} が空でないことを確認し、各フィールドの値が期待通りであるかどうかを検証します。</p>
+   *
+   * <p>主な検証項目:
+   * <ul>
+   *   <li>ID 999 に対応する記事が存在すること。</li>
+   *   <li>記事の各フィールド（id、title、content、createdAt、updatedAt）が期待通りの値であること。</li>
+   * </ul>
+   * </p>
+   */
+  @Test
+  @DisplayName("findById: 指定されたIDの記事が存在するとき、ArticleEntityを返す")
+  public void findById_returnArticleEntity() {
+    // ## Arrange ## モックでID 999 の記事を返すように設定
+    when(articleRepository.selectById(999)).thenReturn(Optional.of(
+        new ArticleEntity(
+            999,
+            "title_999",
+            "body_999",
+            LocalDateTime.of(2010, 10, 1, 0, 0, 0),
+            LocalDateTime.of(2010, 11, 1, 0, 0, 0)
+        )
+    ));
+
+    // ## Act ## ID 999 の記事を取得
+    var actual = cut.findById(999);
+
+    // ## Assert ##
+    assertThat(actual)
+        .isPresent()// Optional が空でないことを確認
+        // 各フィールドの値が期待通りかどうかを確認
+        .hasValueSatisfying(article -> {
+          assertThat(article.id()).isEqualTo(999);
+          assertThat(article.title()).isEqualTo("title_999");
+          assertThat(article.content()).isEqualTo("body_999");
+          assertThat(article.createdAt()).isEqualTo("2010-10-01T00:00:00");
+          assertThat(article.updatedAt()).isEqualTo("2010-11-01T00:00:00");
+        });
   }
 }
