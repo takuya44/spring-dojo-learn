@@ -125,4 +125,30 @@ class ArticleServiceMockTest {
           assertThat(article.updatedAt()).isEqualTo("2010-11-01T00:00:00");
         });
   }
+
+  /**
+   * 指定されたIDの記事が存在しない場合に、{@link ArticleService#findById(int)} が {@link Optional#empty()}
+   * を返すことを検証するテストメソッド。
+   *
+   * <p>このテストでは、モックされた {@link ArticleRepository} が指定されたID 999 に対して
+   * 空の {@link Optional} を返すように設定されています。</p>
+   *
+   * <p>主な検証項目:
+   * <ul>
+   *   <li>ID 999 に対応する記事が存在しない場合、{@link Optional#empty()} が返されること。</li>
+   * </ul>
+   * </p>
+   */
+  @Test
+  @DisplayName("findById: 指定されたIDの記事が存在しないとき、Optional.emptyを返す")
+  public void findById_returnEmpty() {
+    // ## Arrange ## モックでID 999 の記事が存在しない場合を設定
+    when(articleRepository.selectById(999)).thenReturn(Optional.empty());
+
+    // ## Act ##
+    var actual = cut.findById(999);
+
+    // ## Assert ##
+    assertThat(actual).isEmpty(); // 該当する記事がないため、空のOptionalを期待
+  }
 }
