@@ -8,11 +8,35 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 
-@SpringBootTest
+/**
+ * {@link ArticleService} のテストクラスで、MyBatisとSpringのコンテキストを使用して、
+ * 実際のデータベースではなく、モックや設定されたデータソースを利用してテストを行う。
+ *
+ * <p>このクラスでは、主に次のアノテーションが使用されています:
+ * <ul>
+ *   <li>{@link MybatisTest}: MyBatisに特化したテストをサポートするアノテーションで、MyBatisのコンポーネントをロードしてテストを実行します。
+ *   通常、リポジトリ層（Mapperインターフェース）やデータベースとの接続に関連するテストに使用します。
+ *   このアノテーションを使用すると、自動的にインメモリデータベース（H2など）が設定されます。</li>
+ *
+ *   <li>{@link AutoConfigureTestDatabase}: テスト用データベースを自動設定するためのアノテーションです。
+ *   このクラスでは `replace = AutoConfigureTestDatabase.Replace.NONE` が指定されているため、Springが自動的にインメモリデータベースを使用するのを無効化し、
+ *   代わりに、`application.yml`や`application.properties`に定義されたデータベース設定を使用します。</li>
+ *
+ *   <li>{@link Import}: Springコンテキストに特定のクラス（この場合は {@link ArticleService}）を追加して、
+ *   そのクラスがテスト対象として利用できるようにします。
+ *   ここでは、テスト対象として {@link ArticleService} を明示的にSpringコンテキストに登録しています。</li>
+ * </ul>
+ * </p>
+ */
+@MybatisTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import(ArticleService.class)
 class ArticleServiceMockBeanTest {
 
   @MockBean
