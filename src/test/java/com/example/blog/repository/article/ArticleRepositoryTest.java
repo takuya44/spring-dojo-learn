@@ -2,21 +2,14 @@ package com.example.blog.repository.article;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.example.blog.config.MybatisDefaultDatasourceTest;
 import com.example.blog.service.article.ArticleEntity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mybatis.spring.boot.test.autoconfigure.MybatisTest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.test.context.jdbc.Sql;
 
-// MyBatisのテストを行うためのテストクラス
-// @MybatisTestアノテーションは、MyBatis関連のコンポーネントのみをロードし、テストを行います。
-@MybatisTest
-// 実際のデータベースを使用する設定を行うアノテーション。
-// replace = AutoConfigureTestDatabase.Replace.NONEにより、Springがデフォルトで組み込みデータベースを使用するのを防ぎ、
-// application.ymlやapplication.propertiesで定義された実際のデータベース設定を使用します。
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@MybatisDefaultDatasourceTest
 class ArticleRepositoryTest {
 
   // テスト対象（cut: class under test）のArticleRepositoryを自動的に注入

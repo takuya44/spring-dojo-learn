@@ -3,6 +3,7 @@ package com.example.blog.service.article;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
+import com.example.blog.config.MybatisDefaultDatasourceTest;
 import com.example.blog.repository.article.ArticleRepository;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -34,8 +35,7 @@ import org.springframework.context.annotation.Import;
  * </ul>
  * </p>
  */
-@MybatisTest
-@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@MybatisDefaultDatasourceTest
 @Import(ArticleService.class)
 class ArticleServiceMockBeanTest {
 
