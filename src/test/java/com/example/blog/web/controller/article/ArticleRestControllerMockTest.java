@@ -1,12 +1,23 @@
 package com.example.blog.web.controller.article;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.example.blog.config.ObjectMapperConfig;
+import com.example.blog.config.SecurityConfig;
+import com.example.blog.service.article.ArticleEntity;
 import com.example.blog.service.article.ArticleService;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
@@ -19,10 +30,14 @@ import org.springframework.test.web.servlet.MockMvc;
  * <ul>
  *   <li>{@link WebMvcTest}: MVC層にフォーカスしたテストを実行し、コントローラーのテストを支援するためのアノテーション。</li>
  *   <li>{@link MockBean}: サービス層の依存関係をモックとして注入し、テスト対象のコントローラーの依存関係を注入する際に使用します。</li>
+ *   <li>{@link Import}: テスト対象に必要な追加の設定クラスをインポートします。
+ *   ここでは {@link ObjectMapperConfig}（ObjectMapperのカスタム設定）と {@link SecurityConfig}（セキュリティ設定）をインポートしています。
+ *   このアノテーションを使用することで、テスト環境でも実際のアプリケーションと同様の設定が反映されます。</li>
  * </ul>
  * </p>
  */
 @WebMvcTest(ArticleRestController.class)
+@Import({ObjectMapperConfig.class, SecurityConfig.class})
 class ArticleRestControllerMockTest {
 
   /**
@@ -40,6 +55,13 @@ class ArticleRestControllerMockTest {
   private ArticleService mockArticleService;
 
   /**
+   * {@link UserDetailsService} のモック。
+   * <p>ユーザー認証に関連するサービス層をモック化し、実際のユーザー認証処理を行わずにテストを実行します。</p>
+   */
+  @MockBean
+  private UserDetailsService mockUserDetailsService;
+
+  /**
    * {@link MockMvc} が正しく初期化されていることを検証するテスト。
    * <p>このテストでは、`MockMvc` オブジェクトがnullでないことを確認し、正常にテスト環境がセットアップされていることを確認します。</p>
    */
@@ -47,4 +69,39 @@ class ArticleRestControllerMockTest {
   public void mockMvc() {
     assertThat(mockMvc).isNotNull();  // MockMvcがnullでないことを確認
   }
+
+  /**
+   * GET /articles/{id}: 指定されたIDの記事が存在するとき、200 OKを返すテスト。
+   *
+   * <p>このテストでは、指定されたIDの記事が存在する場合、ステータスコード200が返されることを検証します。
+   * モックされたサービスを使用して、記事のIDに対応する {@link ArticleEntity} を返し、 正常なレスポンスが返されるかどうかを確認します。</p>
+   *
+   * @throws Exception テスト実行時に例外が発生した場合
+   */
+  @Test
+  @DisplayName("GET /articles/{id}: 指定されたIDの記事が存在するとき、200 OK")
+  public void getArticlesById_200OK() throws Exception {
+    // ## Arrange ##
+    // テスト用の期待されるArticleEntityオブジェクトを作成
+    var expected = new ArticleEntity(
+        999,
+        "title_999",
+        "content_999",
+        LocalDateTime.of(2022, 1, 2, 3, 4, 5),
+        LocalDateTime.of(2023, 1, 2, 3, 4, 5)
+    );
+
+    // モックされたArticleServiceが指定されたIDの記事を返すように設定
+    when(mockArticleService.findById(expected.id())).thenReturn(Optional.of(expected));
+
+    // ## Act ##
+    // GETリクエストを送信し、レスポンスを受け取る
+    var actual = mockMvc.perform(get("/articles/{id}", 999));
+
+    // ## Assert ##
+    // ステータスコード200 OKを期待
+    actual.andExpect(status().isOk());
+
+  }
+
 }
