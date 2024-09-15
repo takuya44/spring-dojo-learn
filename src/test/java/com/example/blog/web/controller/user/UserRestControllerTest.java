@@ -69,4 +69,27 @@ class UserRestControllerTest {
         .andExpect(content().bytes(MOCK_USERNAME.getBytes()));
 
   }
+
+  /**
+   * /users/me: 未ログインユーザーがアクセスしたとき、403 Forbidden を返すテスト。
+   *
+   * <p>このテストでは、認証されていないユーザーが /users/me エンドポイントにアクセスした際に、
+   * ステータスコード403 Forbiddenが返されることを確認します。</p>
+   *
+   * @throws Exception テスト実行時に例外が発生した場合
+   */
+  @Test
+  @DisplayName("/users/me: 未ログインユーザーがアクセスすると、403 Forbidden を返す")
+  public void usersMe_return403() throws Exception {
+    // ## Arrange ##
+    // 未ログイン状態でGETリクエストを作成：@WithMockUser(username = MOCK_USERNAME)なし
+
+    // ## Act ##
+    var actual = mockMvc.perform(MockMvcRequestBuilders.get("/users/me"));
+
+    // ## Assert ##
+    // ステータスコード403 Forbiddenが返されることを検証
+    actual.andExpect(status().isForbidden());
+
+  }
 }
