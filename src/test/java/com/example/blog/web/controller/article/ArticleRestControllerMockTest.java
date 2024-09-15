@@ -114,4 +114,30 @@ class ArticleRestControllerMockTest {
     ;
   }
 
+  /**
+   * GET /articles/{id}: 指定されたIDの記事が存在しないとき、404 Not Foundを返すテスト。
+   *
+   * <p>このテストでは、指定されたIDの記事が存在しない場合に、ステータスコード404が返されることを検証します。
+   * サービス層の {@link ArticleService} が {@code Optional.empty()} を返すようにモックし、
+   * コントローラーが適切に404エラーレスポンスを返すことを確認します。</p>
+   *
+   * @throws Exception テスト実行時に例外が発生した場合
+   */
+  @Test
+  @DisplayName("GET /articles/{id}: 指定されたIDの記事が存在しないとき、404 Not Found")
+  public void getArticlesById_404NotFound() throws Exception {
+    // ## Arrange ##
+    var expectedId = 999;
+
+    // モックされたArticleServiceが指定されたIDの記事を見つけられないように設定
+    when(mockArticleService.findById(expectedId)).thenReturn(Optional.empty());
+
+    // ## Act ##
+    // GETリクエストを送信し、レスポンスを受け取る
+    var actual = mockMvc.perform(get("/articles/{id}", expectedId));
+
+    // ## Assert ##
+    // ステータスコード404 Not Foundを期待
+    actual.andExpect(status().isNotFound());
+  }
 }
