@@ -3,6 +3,7 @@ package com.example.blog.web.controller.article;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.blog.config.ObjectMapperConfig;
@@ -74,7 +75,10 @@ class ArticleRestControllerMockTest {
    * GET /articles/{id}: 指定されたIDの記事が存在するとき、200 OKを返すテスト。
    *
    * <p>このテストでは、指定されたIDの記事が存在する場合、ステータスコード200が返されることを検証します。
-   * モックされたサービスを使用して、記事のIDに対応する {@link ArticleEntity} を返し、 正常なレスポンスが返されるかどうかを確認します。</p>
+   * モックされたサービスを使用して、記事のIDに対応する {@link ArticleEntity} を返し、正常なレスポンスが返されるかどうかを確認します。</p>
+   *
+   * <p>また、レスポンスの内容が期待通りであることを {@code jsonPath} を使用して検証し、ID、タイトル、コンテンツ、
+   * 作成日時、更新日時のフィールドが期待通りの値を持っていることを確認します。</p>
    *
    * @throws Exception テスト実行時に例外が発生した場合
    */
@@ -99,9 +103,15 @@ class ArticleRestControllerMockTest {
     var actual = mockMvc.perform(get("/articles/{id}", 999));
 
     // ## Assert ##
-    // ステータスコード200 OKを期待
-    actual.andExpect(status().isOk());
-
+    // ステータスコード200 OKを期待し、レスポンス内容の検証
+    actual
+        .andExpect(status().isOk())  // ステータスコード200 OK
+        .andExpect(jsonPath("$.id").value(expected.id()))  // IDの検証
+        .andExpect(jsonPath("$.title").value(expected.title()))  // タイトルの検証
+        .andExpect(jsonPath("$.content").value(expected.content()))  // コンテンツの検証
+        .andExpect(jsonPath("$.createdAt").value(expected.createdAt().toString()))  // 作成日時の検証
+        .andExpect(jsonPath("$.updatedAt").value(expected.updatedAt().toString()))  // 更新日時の検証
+    ;
   }
 
 }
