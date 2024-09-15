@@ -79,4 +79,26 @@ class ArticleRestControllerNoMockTest {
         .andExpect(jsonPath("$.createdAt").value("2022-01-01T10:00:00"))
         .andExpect(jsonPath("$.updatedAt").value("2022-02-01T11:00:00"));
   }
+
+  /**
+   * 指定されたIDの記事が存在しない場合、404 Not Found が返されることをテスト。
+   *
+   * <p>このテストは、データベースに指定されたIDの記事が存在しない場合に、
+   * エラーステータスコード404 Not Foundが返されることを検証します。</p>
+   *
+   * @throws Exception テスト実行時に例外が発生した場合
+   */
+  @Test
+  @DisplayName("GET /articles/{id}: 指定されたIDの記事が存在しないとき、404 Not Found")
+  public void getArticle_return404() throws Exception {
+    // ## Arrange ##
+
+    // ## Act ##
+    // データベースに存在しない記事IDを指定
+    var actual = mockMvc.perform(get("/articles/{id}", -1));
+
+    // ## Assert ##
+    // 404 Not Found ステータスコードが返されることを検証
+    actual.andExpect(status().isNotFound());
+  }
 }
