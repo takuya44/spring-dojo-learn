@@ -55,3 +55,7 @@ flyway {
             'filesystem:src/main/resources/db/migration_dev' // 開発用サンプルデータ
     ]
 }
+
+openApiValidate {
+    inputSpec.set("$projectDir/src/main/resources/openapi.yaml")
+}
