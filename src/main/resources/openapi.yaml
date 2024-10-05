@@ -1,0 +1,29 @@
+openapi: 3.0.3
+info:
+  title: Blog API
+  version: 0.0.1
+tags:
+  - name: csrf-protection
+    description: CSRF攻撃からアプリケーションを保護するためのAPI
+paths:
+  # GET /csrf-cookie
+  /csrf-cookie:
+    get:
+      tags: [ csrf-protection ]
+      operationId: getCsrfCookie
+      summary: CSRF Cookie の取得
+      description: |
+        リクエストに成功すると、204 No Content のレスポンスが返ります。
+        このレスポンスの Set-Cookie ヘッダーに XSRF-TOKEN が含まれています。
+        POST リクエストを実行するときは、受け取った XSRF-TOKEN の値を X-XSRF-TOKEN ヘッダーに設定する必要があります。
+        XSRF-TOKEN の値は POST リクエストの度に取得し直す必要はなく、同じ値を何度も使うことができます。
+      responses:
+        '204':
+          description: No Content
+          headers:
+            Set-Cookie:
+              description: CSRF対策に利用する XSRF-TOKEN クッキーが含まれています。
+              schema:
+                type: string
+                example: XSRF-TOKEN=4ee8188f-2873-46cb-937f-7464ebf143e7; Path=/
+          content: { }
