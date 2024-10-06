@@ -56,16 +56,25 @@ flyway {
     ]
 }
 
+// OpenAPI の仕様ファイルのパスを定義 (openapi.yaml ファイルの場所)
+def openApiSpecPath = "$projectDir/src/main/resources/openapi.yaml"
+
+// OpenAPI Generator が生成したソースコードの出力先ディレクトリを定義
+def openApiSourceCodePath = layout.buildDirectory.dir("spring").get().toString()
+
+// OpenAPI の仕様ファイルが有効であることを検証するタスクの設定
 openApiValidate {
-    inputSpec.set("$projectDir/src/main/resources/openapi.yaml")
+    inputSpec.set(openApiSpecPath)  // 仕様ファイルのパスを指定
 }
 
+// OpenAPI Generator を使ってソースコードを生成するタスクの設定
 openApiGenerate {
-    generatorName.set("spring")
-    inputSpec.set("$projectDir/src/main/resources/openapi.yaml")
-    outputDir.set("$buildDir/generated")
-    apiPackage.set("org.openapi.example.api")
-    invokerPackage.set("org.openapi.example.invoker")
-    modelPackage.set("org.openapi.example.model")
-    configOptions.put("dateLibrary", "java8")
+    generatorName.set("spring")  // 生成するコードの種類 (ここでは Spring 用のコードを生成)
+    inputSpec.set(openApiSpecPath)  // 生成元となる OpenAPI 仕様ファイルのパスを指定
+    outputDir.set(openApiSourceCodePath)  // 生成されたソースコードの出力先ディレクトリを指定
+    apiPackage.set("com.example.blog.api")  // 生成される API クラスのパッケージ名
+    modelPackage.set("com.example.blog.model")  // 生成されるモデルクラスのパッケージ名
+    configOptions.put("interfaceOnly", "true")  // API インターフェースのみを生成 (実装は生成しない)
+    configOptions.put("useSpringBoot3", "true")  // Spring Boot 3 の機能を利用
+    configOptions.put("documentationProvider", "none")  // ドキュメント生成を無効化
 }
