@@ -28,24 +28,27 @@ paths:
                 example: XSRF-TOKEN=4ee8188f-2873-46cb-937f-7464ebf143e7; Path=/
           content: { }
         '500':
-          description: Internal Server Error
-          content:
-            application/problem+json:
-              schema:
-                type: object
-                properties:
-                  type:
-                    type: string
-                    format: uri
-                  title:
-                    type: string
-                  status:
-                    type: integer
-                    format: int32
-                    default: 500
-                  detail:
-                    type: string
-                  instance:
-                    type: string
-                    format: uri
-
+          $ref: "#/components/responses/InternalServerErrorResponse"
+components:
+  responses:
+    InternalServerErrorResponse:
+      description: Internal Server Error
+      content:
+        application/problem+json:
+          schema:
+            type: object
+            properties:
+              type:
+                type: string
+                format: uri
+              title:
+                type: string
+              status:
+                type: integer
+                format: int32
+                default: 500
+              detail:
+                type: string
+              instance:
+                type: string
+                format: uri
