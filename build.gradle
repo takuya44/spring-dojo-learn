@@ -78,3 +78,6 @@ openApiGenerate {
     configOptions.put("useSpringBoot3", "true")  // Spring Boot 3 の機能を利用
     configOptions.put("documentationProvider", "none")  // ドキュメント生成を無効化
 }
+
+// メインの Java ソースコードのディレクトリに、OpenAPI Generator で生成されたコードのディレクトリを追加
+sourceSets.main.java.srcDir "${openApiSourceCodePath}/src/main/java"
