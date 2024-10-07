@@ -13,6 +13,8 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.4'
     id "org.flywaydb.flyway" version "10.9.1"
     id "org.openapi.generator" version "7.6.0"
+    // Spotlessプラグインを適用し、コードのフォーマットを自動的に行うための設定
+    id 'com.diffplug.spotless' version '6.13.0'
 }
 
 group = 'com.example'
@@ -82,3 +84,17 @@ openApiGenerate {
 
 // メインの Java ソースコードのディレクトリに、OpenAPI Generator で生成されたコードのディレクトリを追加
 sourceSets.main.java.srcDir "${openApiSourceCodePath}/src/main/java"
+
+// OpenAPIで生成されたコードのパスを相対パスで指定：絶対パスだとエラー発生
+def openApiGeneratedCodeRelativePath = project.relativePath(openApiSourceCodePath)
+
+spotless {
+    java {
+        // Spotlessが対象とするファイルを指定。OpenAPIによって生成されたJavaファイルが対象
+        // ${openApiGeneratedCodeRelativePath}/src/main/java/以下のすべてのJavaファイルを対象とする
+        target "${openApiGeneratedCodeRelativePath}/src/main/java/**/*.java".toString()
+
+        // 不要なインポートを自動的に削除する設定
+        removeUnusedImports()
+    }
+}
