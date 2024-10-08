@@ -98,3 +98,18 @@ spotless {
         removeUnusedImports()
     }
 }
+
+// Spotlessによるコード整形タスク 'spotlessJava' は、'openApiGenerate' タスクが実行された後に実行される
+tasks.named("spotlessJava") {
+    dependsOn tasks.named("openApiGenerate")
+}
+
+// 'openApiGenerate' タスクが完了したら、その後に 'spotlessJavaApply' タスクを実行する
+tasks.named("openApiGenerate").configure {
+    finalizedBy tasks.named("spotlessJavaApply")
+}
+
+// Javaコードをコンパイルする 'compileJava' タスクは、'openApiGenerate' タスクの実行後に実行される
+tasks.named("compileJava") {
+    dependsOn tasks.named("openApiGenerate")
+}
