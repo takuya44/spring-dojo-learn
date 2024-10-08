@@ -39,7 +39,7 @@ public class RegistrationAndLoginIT {
   @Test
   public void integrationTest() {
     // ユーザー登録
-    var xsrfToken = getRoot();
+    var xsrfToken = getCsrfCookie();
     register(xsrfToken);
 
     // ログイン失敗
@@ -85,11 +85,11 @@ public class RegistrationAndLoginIT {
    * @return 取得したXSRF-TOKENクッキーの値
    * @throws AssertionError XSRF-TOKENが存在しない、または値が空である場合
    */
-  private String getRoot() {
+  private String getCsrfCookie() {
     // ## Arrange ##
 
     // ## Act ##
-    var responseSpec = webTestClient.get().uri("/").exchange();
+    var responseSpec = webTestClient.get().uri("/csrf-cookie").exchange();
 
     // ## Action ##
     var response = responseSpec.returnResult(String.class);

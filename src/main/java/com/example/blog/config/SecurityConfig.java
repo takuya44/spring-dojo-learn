@@ -53,7 +53,7 @@ public class SecurityConfig {
         .securityContext(context -> context.securityContextRepository(securityContextRepository))
         // 全てのリクエストに対して認証が必要であることを指定
         .authorizeHttpRequests((authorize) -> authorize
-            .requestMatchers("/").permitAll()
+            .requestMatchers("/csrf-cookie").permitAll()
             .requestMatchers(HttpMethod.POST, "/users").permitAll()
             .requestMatchers("/articles/**").permitAll()
             .anyRequest().authenticated()
