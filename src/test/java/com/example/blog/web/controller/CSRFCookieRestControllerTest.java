@@ -1,8 +1,10 @@
 package com.example.blog.web.controller;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.DisplayName;
@@ -11,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
@@ -68,6 +71,60 @@ class CSRFCookieRestControllerTest {
       result
           .andExpect(status().isNoContent())
           .andExpect(header().string("Set-Cookie", containsString("XSRF-TOKEN=")));
+    }
+  }
+
+  @Nested
+  class Return500Test {
+
+    /**
+     * HTTP リクエストのモックを作成するための {@link MockMvc} インスタンス。
+     * このオブジェクトを使用して、コントローラーに対するリクエストをシミュレートし、レスポンスを検証します。
+     */
+    @Autowired
+    private MockMvc mockMvc;
+
+    /**
+     * モックされた {@link CSRFCookieRestController} のインスタンス。 このモックを使用して、意図的に例外をスローさせ、500 Internal Server
+     * Error のレスポンスをテストします。
+     */
+    @MockBean
+    private CSRFCookieRestController mockCsrfCookieRestController;
+
+
+    /**
+     * テストメソッド {@code return500} は、 `/csrf-cookie` エンドポイントに対して GET リクエストを送信し、 処理中に例外が発生した場合、500
+     * Internal Server Error のステータスコードが返されることを検証します。
+     *
+     * <p>このテストでは、以下を検証します:</p>
+     * <ul>
+     *   <li>ステータスコードが 500 Internal Server Error であること</li>
+     *   <li>レスポンスのJSONフィールドにエラーメッセージが含まれていること</li>
+     * </ul>
+     *
+     * @throws Exception テスト中にリクエストやレスポンスでエラーが発生した場合
+     */
+    @Test
+    @DisplayName("/csrf-cookie: GET リクエストの処理で Exception が発生すると、 500 Internal Server Error が返る")
+    void return500() throws Exception {
+      // ## Arrange ##
+      // mockCsrfCookieRestController が例外をスローするように設定
+      doThrow(new RuntimeException("exception")).when(mockCsrfCookieRestController).getCsrfCookie();
+
+      // ## Act ##
+      // GETリクエストを /csrf-cookie に送信して結果を取得
+      var result = mockMvc.perform(get("/csrf-cookie"));
+
+      // ## Assert ##
+      // ステータスコードが 500 Internal Server Error であることを確認
+      result
+          .andExpect(status().isInternalServerError())
+          .andExpect(jsonPath("$.type").isEmpty())
+          .andExpect(jsonPath("$.title").value("Internal Server Error"))
+          .andExpect(jsonPath("$.status").value(500))
+          .andExpect(jsonPath("$.detail").isEmpty())
+          .andExpect(jsonPath("$.instance").isEmpty());
+      ;
     }
   }
 }
