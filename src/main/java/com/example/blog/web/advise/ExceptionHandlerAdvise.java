@@ -1,6 +1,7 @@
 package com.example.blog.web.advise;
 
 import com.example.blog.model.InternalServerError;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -36,7 +37,10 @@ public class ExceptionHandlerAdvise {
     error.setDetail(null);
     error.setInstance(null);
 
-    // 500ステータスコードと設定したレスポンスを返す
-    return ResponseEntity.status(500).body(error);
+    // 500ステータスコードと、application/problem+json のコンテンツタイプを設定してレスポンスを返す
+    return ResponseEntity
+        .internalServerError() // HTTP 500 ステータスコードを返す
+        .contentType(MediaType.APPLICATION_PROBLEM_JSON) // application/problem+json コンテンツタイプを設定
+        .body(error); // エラーオブジェクトをレスポンスのボディとして返す
   }
 }

@@ -3,6 +3,7 @@ package com.example.blog.web.controller;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -14,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
@@ -119,6 +121,7 @@ class CSRFCookieRestControllerTest {
       // ステータスコードが 500 Internal Server Error であることを確認
       result
           .andExpect(status().isInternalServerError())
+          .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
           .andExpect(jsonPath("$.type").isEmpty())
           .andExpect(jsonPath("$.title").value("Internal Server Error"))
           .andExpect(jsonPath("$.status").value(500))
