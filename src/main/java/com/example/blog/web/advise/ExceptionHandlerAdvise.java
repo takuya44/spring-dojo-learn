@@ -1,6 +1,7 @@
 package com.example.blog.web.advise;
 
 import com.example.blog.model.InternalServerError;
+import com.example.blog.web.exception.ResourceNotFoundException;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -43,4 +44,22 @@ public class ExceptionHandlerAdvise {
         .contentType(MediaType.APPLICATION_PROBLEM_JSON) // application/problem+json コンテンツタイプを設定
         .body(error); // エラーオブジェクトをレスポンスのボディとして返す
   }
+
+  /**
+   * カスタム例外 {@link ResourceNotFoundException} が発生した場合のハンドリングを行うメソッド。
+   *
+   * <p>このメソッドは、指定されたリソースが存在しない場合にスローされる {@link ResourceNotFoundException} をキャッチし、
+   * クライアントに 404 Not Found ステータスコードを返します。</p>
+   *
+   * <p>{@link ExceptionHandler} アノテーションを使用して、例外発生時にこのメソッドが呼び出されます。</p>
+   *
+   * @param e 発生した {@link ResourceNotFoundException} のインスタンス
+   * @return 404 Not Found のレスポンスを返します
+   */
+  @ExceptionHandler(ResourceNotFoundException.class)
+  public ResponseEntity<Void> handleResourceNotFoundException(ResourceNotFoundException e) {
+    // リソースが見つからない場合に404ステータスコードを返す
+    return ResponseEntity.notFound().build();
+  }
+
 }
