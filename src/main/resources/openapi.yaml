@@ -40,6 +40,32 @@ paths:
       tags: [ users ]
       operationId: createUser
       description: ユーザーを登録します
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  description: >
+                    ユーザー名。
+                    使用できる文字は半角英小文字と数字、およびハイフン、アンダースコア、ドットです。
+                    長さは3文字以上32文字以内です。
+                    ハイフン・アンダースコア・ドットはユーザー名の先頭と末尾に使用できません。
+                  type: string
+                  minLength: 3
+                  maxLength: 32
+                  example: username123
+                password:
+                  description: パスワード。10文字以上255文字以内。
+                  type: string
+                  format: password
+                  minLength: 10
+                  maxLength: 255
+                  example: password123
       responses:
         '201':
           description: Created
