@@ -48,6 +48,10 @@ paths:
       responses:
         '201':
           description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserDTO"
 components:
   schemas:
     InternalServerError:
@@ -67,6 +71,7 @@ components:
         instance:
           type: string
           format: uri
+    # エンドポイントへの入力
     UserForm:
       type: object
       required:
@@ -90,6 +95,16 @@ components:
           minLength: 10
           maxLength: 255
           example: password123
+    # 出力
+    UserDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 123
+        username:
+          type: string
+          example: username123
   responses:
     InternalServerErrorResponse:
       description: Internal Server Error
