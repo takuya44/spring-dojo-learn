@@ -58,6 +58,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserDTO"
+        '400':
+          $ref: "#/components/responses/BadRequestResponse"
 components:
   schemas:
     InternalServerError:
@@ -77,6 +79,43 @@ components:
         instance:
           type: string
           format: uri
+    # 400エラー
+    BadRequest:
+      description: >
+        リクエストの内容が不正な場合のエラーレスポンス。
+        クライアントはエラーの内容を確認してリクエストを修正する必要があります。
+        [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457.html) に準拠しています。
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+          default: 400
+          example: 400
+        detail:
+          type: string
+        instance:
+          type: string
+          format: uri
+          example: "/users"
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              pointer:
+                description: エラーが発生したリクエストのパラメーターの JSON ポインター
+                type: string
+                example: "#/username"
+              detail:
+                description: エラーの詳細
+                type: string
+                example: "ユーザー名は3文字以上32文字以内で入力してください"
     # エンドポイントへの入力
     UserForm:
       type: object
@@ -118,3 +157,9 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/InternalServerError"
+    BadRequestResponse:
+      description: Bad Request
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/BadRequest"
