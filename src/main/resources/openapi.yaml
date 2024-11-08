@@ -40,6 +40,9 @@ paths:
       tags: [ users ]
       operationId: createUser
       description: ユーザーを登録します
+      security:
+        - csrfProtectionHeader: [ ]
+        - csrfProtectionCookie: [ ]
       requestBody:
         content:
           application/json:
@@ -165,3 +168,17 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/BadRequest"
+    csrfProtectionHeader:
+      description: >
+        CSRF 対策に利用するヘッダー。
+        Cookie の XSRF-TOKEN の値を設定する必要があります。
+      type: apiKey
+      in: header
+      name: X-XSRF-TOKEN
+    csrfProtectionCookie:
+      description: >
+        CSRF 対策に利用する Cookie。
+        XSRF-TOKEN クッキーは `GET csrf-cookie` で取得できます。
+      type: apiKey
+      in: cookie
+      name: XSRF-TOKEN
