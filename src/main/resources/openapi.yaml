@@ -168,6 +168,7 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/BadRequest"
+  securitySchemes:
     csrfProtectionHeader:
       description: >
         CSRF 対策に利用するヘッダー。
