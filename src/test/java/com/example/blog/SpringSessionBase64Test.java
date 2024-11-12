@@ -20,10 +20,16 @@ public class SpringSessionBase64Test {
   public void bcrypt() {
     var encoder = new BCryptPasswordEncoder();
 
-    System.out.println(encoder.encode("password"));
-    System.out.println(encoder.encode("password"));
-    System.out.println(encoder.encode("password"));
+    // PWの最低文字数が10文字になったため。
+    System.out.println(encoder.encode("password00"));
+    System.out.println(encoder.encode("password00"));
+    System.out.println(encoder.encode("password00"));
     // 同じパスワードでも出力値が異なることに注意 <= ソルトの付加
+    // $2a$10$B0SVL8nAzks3ES5G8cFS1ulpS4OZLQyCvnjzi0ISWx9FrXVzKbkLK
+    // $2a$10$JbGAmUhXF.KFaI3VrnL8ZOxzVNCOnMqonPlL82uHF7O2qwROSLUWK
+    // $2a$10$/x0LDWs0tk6V90.VQ2ObdezEgBCDKuoLi1LWtIe49NKUrc7LqrWGq
+
+    // 8文字↓
     // $2a$10$yov2wEmxbog1xF0pmeoMB.HMKkSoFWuT95xrDZs8K5XLDTkvWe9ua
     // $2a$10$R98uxPGVBI4bmBBU5vYmC.M0ukEaIySVZUEjzjPI6vAnoeuma7juK
     // $2a$10$2hIkgw9SXNZ4xUWUVrqzP.cWkAVkUfvYcqRerGqNPXQ4XUSABIEJm
