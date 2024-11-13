@@ -1,6 +1,6 @@
-package com.example.blog.repository.user;
+package com.example.blog.service.user;
 
-public record UserRecord(
+public record UserEntity(
     String username,
     String password,
     boolean enabled
