@@ -3,6 +3,7 @@ package com.example.blog.repository.user;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.blog.config.MybatisDefaultDatasourceTest;
+import com.example.blog.service.user.UserEntity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +28,7 @@ class UserRepositoryTest {
 
   /**
    * 指定されたユーザー名のユーザーがデータベースに存在することを検証するメソッド {@link UserRepository#selectByUsername(String)}メソッドが正しく
-   * {@link java.util.Optional<UserEntity>} を返すことを検証します。
+   * {@link java.util.Optional< UserEntity >} を返すことを検証します。
    *
    * <p>テストの準備段階として、@Sqlアノテーションを使用して、必要なテストデータをデータベースに挿入。
    * この場合、2つのユーザー (test_user1, test_user2) が事前に挿入されています。</p>
@@ -59,7 +60,7 @@ class UserRepositoryTest {
     // Optional に値が含まれていること、かつ取得したエンティティの内容が期待通りであることを確認
     assertThat(actual)
         .hasValueSatisfying(actualEntity -> {
-          // TODO idも検証したい
+          assertThat(actualEntity.id()).isEqualTo(998);
           assertThat(actualEntity.username()).isEqualTo("test_user1");
           assertThat(actualEntity.password()).isEqualTo("test_password");
           assertThat(actualEntity.enabled()).isTrue();
