@@ -66,4 +66,29 @@ class UserRepositoryTest {
           assertThat(actualEntity.enabled()).isTrue();
         });
   }
+
+  /**
+   * 存在しないユーザー名を指定して selectByUsername を実行したときのテスト {@link UserRepository#selectByUsername(String)}
+   *
+   * <p>
+   * このテストは、データベースに存在しないユーザー名が指定された場合に、 メソッドが正しく空の {@link Optional} を返すことを確認します。
+   * </p>
+   */
+  @Test
+  @DisplayName("selectByUsername: 指定されたユーザー名のユーザーが存在しないとき、Optional.empty を返す")
+  @Sql(statements = {
+      "INSERT INTO users (id, username, password, enabled) VALUES (998, 'test_user1', 'test_password', true);",
+  })
+  void selectByUsername_returnEmpty() {
+    // ## Arrange ##
+    // テストデータとして 'test_user1' ユーザーをデータベースに挿入。
+
+    // ## Act ##
+    // 存在しないユーザー名 'invalid_user' を指定してメソッドを呼び出し
+    var actual = cut.selectByUsername("invalid_user");
+
+    // ## Assert ##
+    // 結果が空の Optional であることを検証
+    assertThat(actual).isEmpty();
+  }
 }
