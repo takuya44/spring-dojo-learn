@@ -91,4 +91,27 @@ class UserRepositoryTest {
     // 結果が空の Optional であることを検証
     assertThat(actual).isEmpty();
   }
+
+  /**
+   * null が指定されたとき、全件検索されないことを確認
+   * <p>
+   * このテストでは、username に null が指定された場合、メソッドが全件検索を実行せず、 正しく空の {@link Optional} を返すことを確認します。
+   * さらに、データベース内に username がリテラル文字列 'null' が存在しても、 これが null として扱われないことを検証します。
+   * </p>
+   */
+  @Test
+  @DisplayName("selectByUsername: username に null が指定されたとき、Optional.Empty を返す（全件検索しない）")
+  @Sql(statements = {
+      "INSERT INTO users (id, username, password, enabled) VALUES (998, 'null', 'test_password', true);"
+  })
+  void selectByUsername_returnNullWhenGivenUsernameIsNull() {
+    // ## Arrange ##
+
+    // ## Act ##
+    // 存在しないユーザー名 'null' を指定してメソッドを呼び出し
+    var actual = cut.selectByUsername(null);
+
+    // ## Assert ##
+    assertThat(actual).isEmpty();
+  }
 }
