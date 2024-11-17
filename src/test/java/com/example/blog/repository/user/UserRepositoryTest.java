@@ -60,10 +60,10 @@ class UserRepositoryTest {
     // Optional に値が含まれていること、かつ取得したエンティティの内容が期待通りであることを確認
     assertThat(actual)
         .hasValueSatisfying(actualEntity -> {
-          assertThat(actualEntity.id()).isEqualTo(998);
-          assertThat(actualEntity.username()).isEqualTo("test_user1");
-          assertThat(actualEntity.password()).isEqualTo("test_password");
-          assertThat(actualEntity.enabled()).isTrue();
+          assertThat(actualEntity.getId()).isEqualTo(998);
+          assertThat(actualEntity.getUsername()).isEqualTo("test_user1");
+          assertThat(actualEntity.getPassword()).isEqualTo("test_password");
+          assertThat(actualEntity.isEnabled()).isTrue();
         });
   }
 
@@ -115,22 +115,38 @@ class UserRepositoryTest {
     assertThat(actual).isEmpty();
   }
 
+  /**
+   * ユーザー登録処理をテストするメソッド。
+   * <p>
+   * このテストでは、新しいユーザーを登録し、自動採番されたIDが正しく設定されているかどうかを検証します。
+   * また、登録されたユーザー情報がデータベースに保存され、正しい値で取得できることを確認します。
+   * </p>
+   */
   @Test
   @DisplayName("insert: User を登録することができる。id は自動で発番される")
   void insert_success() {
     // ## Arrange ##
+    // テスト用の新しいユーザーエンティティを準備（id は null を指定）
+    var newRecord = new UserEntity(null, "test_user1", "test_password1", true);
 
     // ## Act ##
-    cut.insert("test_user1", "test_password1", true);
+    // テスト対象のメソッドを実行してユーザーをデータベースに登録
+    cut.insert(newRecord);
 
     // ## Assert ##
+    // 自動採番された ID が正しくUserEntityのidに設定されていることを検証
+    assertThat(newRecord.getId())
+        .describedAs("AUTO INCREMENT で設定された　id　が　entityの id フィールドに設定されている")
+        .isGreaterThanOrEqualTo(1);
+
+    // DBから登録したユーザーを取得し、保存された情報を検証
     var actual = cut.selectByUsername("test_user1");
     assertThat(actual)
         .hasValueSatisfying(actualEntity -> {
-          assertThat(actualEntity.id()).isNotNull();
-          assertThat(actualEntity.username()).isEqualTo("test_user1");
-          assertThat(actualEntity.password()).isEqualTo("test_password1");
-          assertThat(actualEntity.enabled()).isTrue();
+          assertThat(actualEntity.getId()).isNotNull(); // ID が null でないことを確認
+          assertThat(actualEntity.getUsername()).isEqualTo("test_user1");
+          assertThat(actualEntity.getPassword()).isEqualTo("test_password1");
+          assertThat(actualEntity.isEnabled()).isTrue();
         });
   }
 }

@@ -5,6 +5,7 @@ import java.util.Optional;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
@@ -37,15 +38,22 @@ public interface UserRepository {
       """)
   Optional<UserEntity> selectByUsernameInternal(@Param("username") String username);
 
+  /**
+   * データベースに新しいユーザーを登録するメソッド。
+   * <p>
+   * このメソッドは、MyBatis を使用して `users` テーブルに新しいユーザーを挿入します。 挿入時に `id` 列は自動採番され、その値が指定されたエンティティの `id`
+   * フィールドに反映されます。
+   * </p>
+   *
+   * @param entity 登録するユーザー情報を保持する {@link UserEntity} オブジェクト。 - `username` ユーザー名 - `password`
+   *               パスワード（暗号化されたもの） - `enabled` ユーザーが有効かどうかを示すフラグ
+   */
   @Insert("""
       INSERT INTO users(username, password, enabled)
       VALUES (#{username}, #{password}, #{enabled})
       """)
-  void insert(
-      @Param("username") String username,
-      @Param("password") String password,
-      @Param("enabled") boolean enabled
-  );
+  @Options(useGeneratedKeys = true, keyProperty = "id", keyColumn = "id")
+  void insert(UserEntity entity);
 
   @Delete("""
       DELETE FROM users u
