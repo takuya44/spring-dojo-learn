@@ -114,4 +114,23 @@ class UserRepositoryTest {
     // ## Assert ##
     assertThat(actual).isEmpty();
   }
+
+  @Test
+  @DisplayName("insert: User を登録することができる。id は自動で発番される")
+  void insert_success() {
+    // ## Arrange ##
+
+    // ## Act ##
+    cut.insert("test_user1", "test_password1", true);
+
+    // ## Assert ##
+    var actual = cut.selectByUsername("test_user1");
+    assertThat(actual)
+        .hasValueSatisfying(actualEntity -> {
+          assertThat(actualEntity.id()).isNotNull();
+          assertThat(actualEntity.username()).isEqualTo("test_user1");
+          assertThat(actualEntity.password()).isEqualTo("test_password1");
+          assertThat(actualEntity.enabled()).isTrue();
+        });
+  }
 }
