@@ -22,6 +22,7 @@ class UserServiceTest {
   @Test
   void successAutowired() {
     assertThat(cut).isNotNull();
+    assertThat(userRepository).isNotNull();
   }
 
   @Test
@@ -37,7 +38,7 @@ class UserServiceTest {
     // ## Assert ##
     // passwordとenabled以外の値は、UserRepositoryのテストで検証済みのため、省略。
     var actual = userRepository.selectByUsername(username);
-    
+
     assertThat(actual).hasValueSatisfying(actualEntity -> {
       assertThat(actualEntity.getPassword())
           .describedAs("入力された生のパスワードがハッシュ化されていること")
