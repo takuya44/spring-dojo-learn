@@ -78,10 +78,10 @@ http://localhost:8080
 - **データベース種別**: PostgreSQL
 - **接続情報**:
     - ホスト: `localhost`
-    - ポート: `5432`
-    - データベース名: `blog_db`
-    - ユーザー名: `blog_user`
-    - パスワード: `password`
+    - ポート: `3307`
+    - データベース名: `apidb`
+    - ユーザー名: `apiuser`
+    - パスワード: `apipass`
 
 ### **データベース設定の変更**
 
@@ -89,10 +89,10 @@ http://localhost:8080
 
 ```env
 DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=blog_db
-DB_USER=blog_user
-DB_PASSWORD=password
+DB_PORT=3307
+DB_NAME=apidb
+DB_USER=apiuser
+DB_PASSWORD=apipass
 ```
 
 ---
