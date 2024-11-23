@@ -98,10 +98,23 @@ class UserRestControllerTest {
 
   }
 
+  /**
+   * POST /users: ユーザー作成成功時の動作をテストする。
+   *
+   * <p>このテストでは、以下を検証します:</p>
+   * <ul>
+   *   <li>ステータスコード 201 (Created) が返されること</li>
+   *   <li>ユーザー作成に必要なJSON形式のデータをリクエストボディとして送信する</li>
+   *   <li>リクエストにはCSRFトークンが含まれている</li>
+   * </ul>
+   *
+   * @throws Exception テスト実行時に例外が発生した場合
+   */
   @Test
   @DisplayName("POST /users：ユーザー作成に成功すると、レスポンスの Location ヘッダー、ボディが設定される")
   public void createUser_success() throws Exception {
     // ## Arrange ##
+    // テスト用のユーザーデータをJSON形式で作成
     String newUserJson = """
         {
             "username": "username123",
@@ -110,12 +123,15 @@ class UserRestControllerTest {
         """;
 
     // ## Act ##
+    // MockMvcを使用してPOSTリクエストを作成し、エンドポイントに送信
     var actual = mockMvc.perform(post("/users")
-        .contentType(MediaType.APPLICATION_JSON)
-        .with(csrf())
-        .content(newUserJson));
+        .contentType(MediaType.APPLICATION_JSON) // リクエストのContent-TypeをJSONに設定: 415エラー対策
+        .with(csrf()) // CSRFトークンを含める（セキュリティ設定で必須）:403エラー対策
+        .content(newUserJson)); // リクエストボディとしてユーザーデータを送信
 
     // ## Assert ##
+    // ステータスコードが201 Createdであることを確認
     actual.andExpect(status().isCreated());
+    // TODO: ここに Location ヘッダーやレスポンスボディの検証を追加することも可能
   }
 }
