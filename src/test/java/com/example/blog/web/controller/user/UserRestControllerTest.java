@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -135,7 +136,8 @@ class UserRestControllerTest {
     // ステータスコードが201 Createdであることを確認
     actual
         .andExpect(status().isCreated())
-        .andExpect(header().string("Location", matchesPattern("/users/\\d+")));
+        .andExpect(header().string("Location", matchesPattern("/users/\\d+")))
+        .andDo(print());// 結果みたいから追記した
     // TODO: ここに レスポンスボディの検証を追加することも可能
   }
 }
