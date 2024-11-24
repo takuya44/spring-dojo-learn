@@ -151,6 +151,7 @@ components:
       properties:
         id:
           type: integer
+          format: int64
           example: 123
         username:
           type: string

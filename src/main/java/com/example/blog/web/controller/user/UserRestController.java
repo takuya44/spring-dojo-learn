@@ -76,9 +76,17 @@ public class UserRestController implements UsersApi {
         .buildAndExpand(newUser.getId())
         .toUri();
 
-    // HTTP 201 Created を返す
+    // ユーザー情報をDTOにマッピング（UserEntity から UserDTO へ変換）
+    // UserEntity はデータベース層から取得されるエンティティクラスで、
+    // UserDTO はプレゼンテーション層（APIレスポンス）で使用されるデータ転送オブジェクト。
+    // 必要なフィールドのみを抽出し、プレゼンテーション層に渡す形式に変換する。PWは渡さない。
+    var dto = new UserDTO();
+    dto.setId(newUser.getId());
+    dto.setUsername(newUser.getUsername());
+
+    // HTTP 201 Created ステータスとレスポンスボディを返す
     return ResponseEntity
         .created(location) // LocationヘッダーにユーザーのURLを設定
-        .build();
+        .body(dto);        // 作成したユーザー情報をレスポンスに含む
   }
 }

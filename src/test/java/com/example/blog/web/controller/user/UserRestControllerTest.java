@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.DisplayName;
@@ -137,7 +138,9 @@ class UserRestControllerTest {
     actual
         .andExpect(status().isCreated())
         .andExpect(header().string("Location", matchesPattern("/users/\\d+")))
+        .andExpect(jsonPath("$.id").isNumber())
+        .andExpect(jsonPath("$.username").value("username123"))
+        .andExpect(jsonPath("$.password").doesNotExist()) // パスワードが含まれないことを確認
         .andDo(print());// 結果みたいから追記した
-    // TODO: ここに レスポンスボディの検証を追加することも可能
   }
 }
