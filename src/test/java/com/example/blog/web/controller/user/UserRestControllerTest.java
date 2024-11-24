@@ -1,9 +1,11 @@
 package com.example.blog.web.controller.user;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.DisplayName;
@@ -131,7 +133,9 @@ class UserRestControllerTest {
 
     // ## Assert ##
     // ステータスコードが201 Createdであることを確認
-    actual.andExpect(status().isCreated());
-    // TODO: ここに Location ヘッダーやレスポンスボディの検証を追加することも可能
+    actual
+        .andExpect(status().isCreated())
+        .andExpect(header().string("Location", matchesPattern("/users/\\d+")));
+    // TODO: ここに レスポンスボディの検証を追加することも可能
   }
 }
