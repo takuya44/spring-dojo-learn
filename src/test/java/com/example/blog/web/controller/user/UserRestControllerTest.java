@@ -143,4 +143,44 @@ class UserRestControllerTest {
         .andExpect(jsonPath("$.password").doesNotExist()) // パスワードが含まれないことを確認
         .andDo(print());// 結果みたいから追記した
   }
+
+  /**
+   * POST /users エンドポイントのバリデーションをテストする。
+   *
+   * <p>このテストでは、リクエストボディに username が含まれていない場合に、
+   * サーバーが 400 Bad Request を返すことを検証します。</p>
+   *
+   * <p>検証項目:</p>
+   * <ul>
+   *   <li>CSRF トークンが設定されていること</li>
+   *   <li>Content-Type が JSON に設定されていること</li>
+   *   <li>ステータスコードが 400 Bad Request であること</li>
+   * </ul>
+   *
+   * @throws Exception テスト実行時に例外が発生した場合
+   */
+  @Test
+  @DisplayName("POST /users：400 Bad Request > リクエストに username がないとき")
+  public void createUser_badRequest() throws Exception {
+    // ## Arrange ##
+    // username を含まない不正なリクエストボディを準備
+    String newUserJson = """
+        {
+            "password": "password123"
+        }
+        """;
+
+    // ## Act ##
+    // MockMvc を使用して POST リクエストを送信
+    var actual = mockMvc.perform(post("/users")
+        .with(csrf()) // CSRFトークンを含める（セキュリティ設定で必須）:403エラー対策
+        .contentType(MediaType.APPLICATION_JSON) // リクエストのContent-TypeをJSONに設定: 415エラー対策
+        .content(newUserJson)); // リクエストボディとしてユーザーデータを送信
+
+    // ## Assert ##
+    // サーバーが 400 Bad Request を返すことを確認
+    actual
+        .andDo(print()) // レスポンスの内容を標準出力に表示（デバッグ目的）
+        .andExpect(status().isBadRequest());
+  }
 }
