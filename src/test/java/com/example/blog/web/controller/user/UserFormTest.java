@@ -48,4 +48,38 @@ class UserFormTest {
     // バリデーション違反がないことを確認
     assertThat(violations).isEmpty();
   }
+
+  /**
+   * username フィールドに対するバリデーションの異常系テスト。
+   *
+   * <p>このテストでは、バリデーションルールに違反した入力データが
+   * 適切に検証され、バリデーション違反が発生することを確認します。</p>
+   *
+   * <p>具体例:</p>
+   * <ul>
+   *   <li>username = null</li>
+   *   <li>password = "password00"</li>
+   * </ul>
+   *
+   * @throws Exception テスト実行時に例外が発生した場合
+   */
+  @Test
+  @DisplayName("username のバリデーション：失敗")
+  void username_failure() {
+    // ## Arrange ##
+    // バリデーションファクトリを使用して Validator インスタンスを生成
+    var factory = Validation.buildDefaultValidatorFactory();
+    var validator = factory.getValidator();
+
+    // テスト対象の UserForm インスタンスを作成（username に null を設定）
+    var cut = new UserForm(null, "password00");
+
+    // ## Act ##
+    // バリデーションを実行し、違反内容を取得
+    var violations = validator.validate(cut);
+
+    // ## Assert ##
+    // バリデーション違反が発生していることを確認
+    assertThat(violations).isNotEmpty();
+  }
 }
