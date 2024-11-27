@@ -4,6 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.blog.model.UserForm;
 import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -14,6 +18,28 @@ import org.junit.jupiter.api.Test;
  * 入力データが {@link UserForm} のバリデーション要件を満たしているかを確認します。</p>
  */
 class UserFormTest {
+
+  private ValidatorFactory factory; // バリデーションの設定を生成するファクトリ
+  private Validator validator; // 実際にバリデーションを行うインスタンス
+
+
+  /**
+   * 各テストの実行前に、バリデーションのセットアップを行う。 - デフォルトのValidatorFactoryを作成 - バリデータを取得
+   */
+  @BeforeEach
+  void beforeEach() {
+    // テスト前にバリデーションファクトリを生成し、バリデータを初期化
+    factory = Validation.buildDefaultValidatorFactory();
+    validator = factory.getValidator();
+  }
+
+  /**
+   * 各テストの実行後に、リソースを解放する。 - ValidatorFactoryをクローズ
+   */
+  @AfterEach
+  void afterEach() {
+    factory.close();// リソースを解放してメモリリークを防止
+  }
 
   /**
    * username フィールドに対するバリデーションの正常系テスト。
@@ -33,10 +59,6 @@ class UserFormTest {
   @DisplayName("username のバリデーション：成功")
   void username_success() {
     // ## Arrange ##
-    // バリデーションファクトリを使用して Validator インスタンスを生成
-    var factory = Validation.buildDefaultValidatorFactory();
-    var validator = factory.getValidator();
-
     // テスト対象の UserForm インスタンスを作成（正しい入力値を設定）
     var cut = new UserForm("username00", "password00");
 
@@ -67,10 +89,6 @@ class UserFormTest {
   @DisplayName("username のバリデーション：失敗")
   void username_failure() {
     // ## Arrange ##
-    // バリデーションファクトリを使用して Validator インスタンスを生成
-    var factory = Validation.buildDefaultValidatorFactory();
-    var validator = factory.getValidator();
-
     // テスト対象の UserForm インスタンスを作成（username に null を設定）
     var cut = new UserForm(null, "password00");
 
