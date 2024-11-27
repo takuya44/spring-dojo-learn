@@ -81,5 +81,9 @@ class UserFormTest {
     // ## Assert ##
     // バリデーション違反が発生していることを確認
     assertThat(violations).isNotEmpty();
+
+    // バリデーション違反の対象が "username" フィールドであることを検証
+    assertThat(violations)
+        .anyMatch(violation -> violation.getPropertyPath().toString().equals("username"));
   }
 }
