@@ -10,6 +10,9 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * UserForm クラスのバリデーションロジックをテストするクラス。
@@ -72,25 +75,33 @@ class UserFormTest {
   }
 
   /**
-   * username フィールドに対するバリデーションの異常系テスト。
+   * username のバリデーションテスト: 失敗ケース
    *
-   * <p>このテストでは、バリデーションルールに違反した入力データが
-   * 適切に検証され、バリデーション違反が発生することを確認します。</p>
-   *
-   * <p>具体例:</p>
+   * <p>このテストでは、username に対するバリデーションが正しく失敗することを確認します。</p>
+   * <p>テストデータには以下を含みます:</p>
    * <ul>
-   *   <li>username = null</li>
-   *   <li>password = "password00"</li>
+   *   <li>null: username が未設定の場合</li>
+   *   <li>空文字: username が空文字の場合</li>
+   *   <li>短すぎる文字列: username が 3 文字未満の場合</li>
+   *   <li>長すぎる文字列: username が 33 文字以上の場合</li>
    * </ul>
    *
-   * @throws Exception テスト実行時に例外が発生した場合
+   * @param username テスト対象の username 値
    */
-  @Test
+  @ParameterizedTest
   @DisplayName("username のバリデーション：失敗")
-  void username_failure() {
+  @NullSource // null
+  @ValueSource(strings = {
+      // 文字数は 3~32 文字
+      "", // 空文字
+      "a", // 1文字
+      "aa", // 2文字
+      "aaaaaaaaaabbbbbbbbbbccccccccccddx", // 33文字
+  })
+  void username_failure(String username) {
     // ## Arrange ##
-    // テスト対象の UserForm インスタンスを作成（username に null を設定）
-    var cut = new UserForm(null, "password00");
+    // テスト対象の UserForm インスタンスを作成
+    var cut = new UserForm(username, "password00");
 
     // ## Act ##
     // バリデーションを実行し、違反内容を取得
