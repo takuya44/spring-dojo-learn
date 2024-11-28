@@ -84,6 +84,8 @@ class UserFormTest {
    *   <li>空文字: username が空文字の場合</li>
    *   <li>短すぎる文字列: username が 3 文字未満の場合</li>
    *   <li>長すぎる文字列: username が 33 文字以上の場合</li>
+   *   <li>特殊文字が含まれる場合: username に記号 (例: `!`) が含まれる</li>
+   *   <li>大文字が含まれる場合: username に大文字 (例: `Username`) が含まれる</li>
    * </ul>
    *
    * @param username テスト対象の username 値
@@ -97,6 +99,8 @@ class UserFormTest {
       "a", // 1文字
       "aa", // 2文字
       "aaaaaaaaaabbbbbbbbbbccccccccccddx", // 33文字
+      "username!", // 特殊文字が含まれる
+      "Username", // 大文字が含まれる
   })
   void username_failure(String username) {
     // ## Arrange ##
