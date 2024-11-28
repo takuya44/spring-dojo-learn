@@ -86,7 +86,15 @@ class UserFormTest {
    *   <li>長すぎる文字列: username が 33 文字以上の場合</li>
    *   <li>特殊文字が含まれる場合: username に記号 (例: `!`) が含まれる</li>
    *   <li>大文字が含まれる場合: username に大文字 (例: `Username`) が含まれる</li>
+   *   <li>先頭や末尾に不正な文字が含まれる場合: ハイフン（-）、アンダースコア（_）、ドット（.）</li>
    * </ul>
+   *
+   * <p>具体的には以下のケースをチェックします:</p>
+   * <pre>{@code
+   * null, "", "a", "aa", "aaaaaaaaaabbbbbbbbbbccccccccccddx", "username!",
+   * "Username", ".username", "-username", "_username",
+   * "username.", "username-", "username_"
+   * }</pre>
    *
    * @param username テスト対象の username 値
    */
@@ -101,6 +109,13 @@ class UserFormTest {
       "aaaaaaaaaabbbbbbbbbbccccccccccddx", // 33文字
       "username!", // 特殊文字が含まれる
       "Username", // 大文字が含まれる
+      // 先頭末尾にはハイフン・アンダースコア・ドットを使用できない
+      ".username",
+      "-username",
+      "_username",
+      "username.",
+      "username-",
+      "username_",
   })
   void username_failure(String username) {
     // ## Arrange ##
