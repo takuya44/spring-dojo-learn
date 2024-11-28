@@ -9,7 +9,6 @@ import jakarta.validation.ValidatorFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -47,23 +46,45 @@ class UserFormTest {
   /**
    * username フィールドに対するバリデーションの正常系テスト。
    *
-   * <p>このテストでは、バリデーションルールに準拠した入力データが
-   * 適切に検証され、バリデーション違反が発生しないことを確認します。</p>
+   * <p>このテストでは、バリデーションルールに準拠した入力データが適切に検証され、
+   * バリデーション違反が発生しないことを確認します。</p>
    *
-   * <p>具体例:</p>
+   * <p>テストデータの例:</p>
    * <ul>
-   *   <li>username = "username00"</li>
-   *   <li>password = "password00"</li>
+   *   <li><strong>最小文字数:</strong> 3文字 ("aaa")</li>
+   *   <li><strong>最大文字数:</strong> 32文字 ("aaaaaaaaaabbbbbbbbbbccccccccccdd")</li>
+   *   <li><strong>使用可能な文字種:</strong></li>
+   *   <ul>
+   *     <li>英小文字のみ ("abcdefghqiklmnopqrstuvwxyz")</li>
+   *     <li>数字のみ ("0123456789")</li>
+   *     <li>特殊文字を含む ("user-._name")</li>
+   *   </ul>
    * </ul>
    *
-   * @throws Exception テスト実行時に例外が発生した場合
+   * <p>バリデーション条件:</p>
+   * <ul>
+   *   <li>username の長さは 3〜32 文字であること。</li>
+   *   <li>使用可能な文字は英小文字、数字、一部の特殊文字（ハイフン、アンダースコア、ドット）のみ。</li>
+   *   <li>先頭および末尾に特殊文字は使用できない（別途失敗系でテスト済み）。</li>
+   * </ul>
+   *
+   * @param username テスト対象の username 値。 パラメータ化されたテストデータにより繰り返し実行されます。
    */
-  @Test
+  @ParameterizedTest
   @DisplayName("username のバリデーション：成功")
-  void username_success() {
+  @ValueSource(strings = {
+      // 文字数は 3~32 文字
+      "aaa", // 最小文字数
+      "aaaaaaaaaabbbbbbbbbbccccccccccdd", // 最大文字数
+      // 文字種
+      "abcdefghqiklmnopqrstuvwxyz", // 英小文字のみ
+      "0123456789", // 数字のみ
+      "user-._name", // 許容される特殊文字を含む
+  })
+  void username_success(String username) {
     // ## Arrange ##
     // テスト対象の UserForm インスタンスを作成（正しい入力値を設定）
-    var cut = new UserForm("username00", "password00");
+    var cut = new UserForm(username, "password00");
 
     // ## Act ##
     // バリデーションを実行し、違反内容を取得
