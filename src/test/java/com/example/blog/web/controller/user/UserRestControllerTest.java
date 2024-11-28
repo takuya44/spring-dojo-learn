@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.example.blog.service.user.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,11 +25,15 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * {@link UserRestController} の統合テストクラス。
  *
- * <p>このテストクラスでは、Spring MVCのMockMvcを使用して、ユーザー関連のエンドポイントをテストします。
- * ログイン済みユーザーがアクセスする場合の応答をテストします。</p>
+ * <p>このテストクラスでは、Spring MVC の {@link MockMvc} を使用してユーザー関連のエンドポイントをテストします。
+ * 具体的には、認証済みユーザーや未認証ユーザーがエンドポイントにアクセスした場合の応答を検証します。</p>
  *
- * <p>テストは {@link SpringBootTest} と {@link AutoConfigureMockMvc} アノテーションを使用して構成され、
- * MockMvcを通じてリクエストを模擬し、エンドポイントの応答を検証します。</p>
+ * <p>使用される主要なアノテーション:</p>
+ * <ul>
+ *   <li>{@link SpringBootTest} - Spring Boot のアプリケーションコンテキスト全体を使用したテストを実行する。</li>
+ *   <li>{@link AutoConfigureMockMvc} - {@link MockMvc} オブジェクトを自動設定する。</li>
+ *   <li>{@link Transactional} - テストメソッドごとにトランザクションを開始し、終了後にロールバックする。</li>
+ * </ul>
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -43,6 +48,15 @@ class UserRestControllerTest {
    */
   @Autowired
   private MockMvc mockMvc;
+
+  /**
+   * {@link UserService} の依存性を注入。
+   *
+   * <p>テスト中に必要となるユーザーサービスのメソッドを呼び出すために利用します。
+   * たとえば、事前条件としてデータベースにユーザーを登録する処理などで使用されます。</p>
+   */
+  @Autowired
+  private UserService userService;
 
   /**
    * MockMvcが正しく初期化されていることを検証するテスト。
@@ -182,5 +196,52 @@ class UserRestControllerTest {
     actual
         .andDo(print()) // レスポンスの内容を標準出力に表示（デバッグ目的）
         .andExpect(status().isBadRequest());
+  }
+
+  /**
+   * POST /users: ユーザー登録のバリデーション（重複したユーザー名）をテストします。
+   *
+   * <p>このテストでは、以下を検証します:</p>
+   * <ul>
+   *   <li>既に登録されているユーザー名を指定してリクエストを送信した場合、サーバーが 400 Bad Request を返すこと。</li>
+   *   <li>CSRFトークンが正しく処理されること。</li>
+   *   <li>リクエストの Content-Type が適切であること。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>サービス層を利用して、重複するユーザー名を事前に登録。</li>
+   *   <li>MockMvc を使用して同じユーザー名でリクエストを送信。</li>
+   *   <li>サーバーが 400 Bad Request を返すことを検証。</li>
+   * </ol>
+   *
+   * @throws Exception テスト実行中に予期しない例外が発生した場合
+   */
+  @Test
+  @DisplayName("POST /users：400 Bad Request > すでに登録されているユーザーを指定したとき")
+  public void createUser_badRequest_duplicatedUsername() throws Exception {
+    // ## Arrange ##
+    // 重複するユーザー名を定義し、事前に登録
+    var duplicatedUsername = "username00";
+    userService.register(duplicatedUsername, "password00");
+
+    // リクエストボディとして送信するJSONデータを作成
+    var newUserJson = """
+        {
+          "username": "%s",
+          "password": "password00"
+        }
+        """.formatted(duplicatedUsername);
+
+    // ## Act ##
+    // MockMvc を使用して POST リクエストを送信
+    var actual = mockMvc.perform(post("/users")
+        .with(csrf()) // CSRFトークンを含める（セキュリティ設定で必須）:403エラー対策
+        .contentType(MediaType.APPLICATION_JSON) // リクエストのContent-TypeをJSONに設定: 415エラー対策
+        .content(newUserJson)); // リクエストボディとしてユーザーデータを送信
+
+    // ## Assert ##
+    // サーバーが 400 Bad Request を返すことを確認
+    actual.andExpect(status().isBadRequest());
   }
 }
