@@ -28,7 +28,7 @@ class UserServiceTest {
   private UserRepository userRepository; // ユーザーデータの永続化操作を行うリポジトリ
 
   @Autowired
-  private ApplicationContext ctx;
+  private ApplicationContext ctx; // アプリケーション全体のBean管理状況を確認するためのコンテキスト
 
   /**
    * DI（依存性注入）が成功していることを確認するテスト。
@@ -84,5 +84,30 @@ class UserServiceTest {
           .describedAs("ユーザー新規登録時には、 有効なアカウントとして登録する")
           .isTrue();
     });
+  }
+
+  /**
+   * ユーザー名存在確認機能（existsUsername）のテスト。
+   *
+   * <p>ユーザー名がデータベースに既に存在している場合、true を返すことを確認します。</p>
+   */
+  @Test
+  @DisplayName("existsUsername: ユーザー名が存在するとき true")
+  void method_success() {
+    // ## Arrange ##
+    // 登録済みユーザー情報を設定
+    var username = "test_username";
+    var alreadyExistUser = new UserEntity(null, username, "test_password", true);
+
+    // ユーザーをデータベースに登録
+    userRepository.insert(alreadyExistUser);
+
+    // ## Act ##
+    // ユーザー名存在確認メソッドを呼び出し
+    var actual = cut.existsUsername(username);
+
+    // ## Assert ##
+    // ユーザー名が存在する場合、true が返ることを確認
+    assertThat(actual).isTrue();
   }
 }
