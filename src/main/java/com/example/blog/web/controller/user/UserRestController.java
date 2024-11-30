@@ -7,7 +7,9 @@ import com.example.blog.service.user.UserService;
 import java.security.Principal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.DataBinder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
@@ -25,6 +27,29 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class UserRestController implements UsersApi {
 
   private final UserService userService;
+  private final DuplicateUsernameValidator duplicateUsernameValidator;
+
+  /**
+   * DataBinder にカスタムバリデータを登録するためのメソッド。
+   *
+   * <p>Spring MVC において、リクエストデータをバインドする際にこのメソッドが呼び出され、
+   * カスタムバリデーションロジックを追加することができます。 この場合、{@link DuplicateUsernameValidator}
+   * を登録し、ユーザー名の重複チェックを行います。</p>
+   *
+   * <p>具体的な動作:</p>
+   * <ul>
+   *   <li>POST リクエストで送信された {@link UserForm} のデータを検証する際に、
+   *       ユーザー名が既に存在していないかチェック。</li>
+   *   <li>重複している場合、`username` フィールドに対してバリデーションエラーを登録。</li>
+   * </ul>
+   *
+   * @param dataBinder リクエストデータをバインドするための {@link DataBinder}
+   */
+  @InitBinder
+  public void initBinder(DataBinder dataBinder) {
+    // DuplicateUsernameValidator を登録
+    dataBinder.addValidators(duplicateUsernameValidator);
+  }
 
   /**
    * 現在認証されているユーザーの情報を取得する。
