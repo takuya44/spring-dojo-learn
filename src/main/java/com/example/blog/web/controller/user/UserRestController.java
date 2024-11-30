@@ -7,6 +7,7 @@ import com.example.blog.model.UserForm;
 import com.example.blog.service.user.UserService;
 import java.security.Principal;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.DataBinder;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -118,14 +119,35 @@ public class UserRestController implements UsersApi {
         .body(dto);        // 作成したユーザー情報をレスポンスに含む
   }
 
+  /**
+   * バリデーション失敗時に 400 Bad Request を返すための例外ハンドラ。
+   *
+   * <p>このメソッドは {@link MethodArgumentNotValidException} をキャッチし、リクエストデータのバリデーションエラーを
+   * クライアントに返すためのレスポンスを生成します。</p>
+   *
+   * <p>具体的な動作:</p>
+   * <ul>
+   *   <li>例外オブジェクト {@link MethodArgumentNotValidException} からエラーメッセージを取得。</li>
+   *   <li>カスタムエラーレスポンスオブジェクト {@link BadRequest} に情報をコピー。</li>
+   *   <li>HTTP 400 Bad Request のレスポンスを返す。</li>
+   * </ul>
+   *
+   * @param e バリデーションエラーを含む例外オブジェクト
+   * @return バリデーションエラーの詳細を含む HTTP 400 Bad Request レスポンス
+   */
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<BadRequest> handleMethodArgumentNotValidException(
       MethodArgumentNotValidException e
   ) {
+    // バリデーションエラー情報を格納するカスタムオブジェクトを作成
     var body = new BadRequest();
-    body.setTitle(e.getBody().getTitle());
 
+    // 例外オブジェクトからレスポンス用のプロパティをコピー
+    BeanUtils.copyProperties(e.getBody(), body);
+
+    // HTTP 400 Bad Request レスポンスを生成
     return ResponseEntity
-        .badRequest().body(body);
+        .badRequest() // ステータスコード 400 を設定
+        .body(body); // レスポンスボディにバリデーションエラー詳細を含むオブジェクトを設定
   }
 }
