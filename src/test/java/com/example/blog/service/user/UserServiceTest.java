@@ -110,4 +110,34 @@ class UserServiceTest {
     // ユーザー名が存在する場合、true が返ることを確認
     assertThat(actual).isTrue();
   }
+
+  /**
+   * existsUsername メソッドのテスト。
+   *
+   * <p>このテストは、指定されたユーザー名がデータベースに存在しない場合に
+   * false を返すことを検証します。</p>
+   *
+   * <p>主な検証点：</p>
+   * <ul>
+   *   <li>データベースに存在しないユーザー名を確認した場合、メソッドが false を返すこと。</li>
+   * </ul>
+   */
+  @Test
+  @DisplayName("existsUsername: ユーザー名が存在しないとき false")
+  void existsUsername_returnFalse() {
+    // ## Arrange ##
+    // データベースに登録されるテスト用ユーザーを作成
+    var user = new UserEntity(null, "test_username", "test_password", true);
+
+    // ユーザーをデータベースに登録
+    userRepository.insert(user);
+
+    // ## Act ##
+    // 指定したユーザー名が存在するか確認
+    var actual = cut.existsUsername("new_username");
+
+    // ## Assert ##
+    // 指定したユーザー名が存在しないため、false が返されることを検証
+    assertThat(actual).isFalse();
+  }
 }
