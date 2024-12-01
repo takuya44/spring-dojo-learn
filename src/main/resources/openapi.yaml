@@ -84,6 +84,17 @@ components:
         instance:
           type: string
           format: uri
+    ErrorDetail:
+      description: BadRequest エラーが発生したときのエラーの詳細
+      properties:
+        pointer:
+          description: エラーが発生したリクエストのパラメーターの JSON ポインター
+          type: string
+          example: "#/username"
+        detail:
+          description: エラーの詳細
+          type: string
+          example: "ユーザー名は3文字以上32文字以内で入力してください"
     # 400エラー
     BadRequest:
       description: >
@@ -110,16 +121,7 @@ components:
         errors:
           type: array
           items:
-            type: object
-            properties:
-              pointer:
-                description: エラーが発生したリクエストのパラメーターの JSON ポインター
-                type: string
-                example: "#/username"
-              detail:
-                description: エラーの詳細
-                type: string
-                example: "ユーザー名は3文字以上32文字以内で入力してください"
+            $ref: "#/components/schemas/ErrorDetail"
     # エンドポイントへの入力
     UserForm:
       type: object
