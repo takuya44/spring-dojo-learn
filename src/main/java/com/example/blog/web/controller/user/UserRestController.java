@@ -2,14 +2,17 @@ package com.example.blog.web.controller.user;
 
 import com.example.blog.api.UsersApi;
 import com.example.blog.model.BadRequest;
+import com.example.blog.model.ErrorDetail;
 import com.example.blog.model.UserDTO;
 import com.example.blog.model.UserForm;
 import com.example.blog.service.user.UserService;
 import java.security.Principal;
+import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.DataBinder;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -128,7 +131,7 @@ public class UserRestController implements UsersApi {
    * <p>具体的な動作:</p>
    * <ul>
    *   <li>例外オブジェクト {@link MethodArgumentNotValidException} からエラーメッセージを取得。</li>
-   *   <li>カスタムエラーレスポンスオブジェクト {@link BadRequest} に情報をコピー。</li>
+   *   <li>エラー詳細リストを構築し、カスタムレスポンスオブジェクト {@link BadRequest} に設定。</li>
    *   <li>HTTP 400 Bad Request のレスポンスを返す。</li>
    * </ul>
    *
@@ -145,9 +148,29 @@ public class UserRestController implements UsersApi {
     // 例外オブジェクトからレスポンス用のプロパティをコピー
     BeanUtils.copyProperties(e.getBody(), body);
 
+    // バリデーションエラーの詳細をリスト形式で収集
+    var errorDetailList = new ArrayList<ErrorDetail>();
+
+    for (final FieldError fieldError : e.getBindingResult().getFieldErrors()) {
+      // フィールドエラー情報を収集
+      var pointer = "#/" + fieldError.getField(); // エラー発生箇所を JSON Pointer 形式で表現
+      var detail = fieldError.getCode(); // バリデーションエラーメッセージを取得
+
+      // ErrorDetail オブジェクトを生成
+      var errorDetail = new ErrorDetail();
+      errorDetail.setPointer(pointer);
+      errorDetail.setDetail(detail);
+
+      // エラーディテールリストに追加
+      errorDetailList.add(errorDetail);
+    }
+
+    // エラーディテールリストをレスポンスオブジェクトに設定
+    body.setErrors(errorDetailList);
+
     // HTTP 400 Bad Request レスポンスを生成
     return ResponseEntity
         .badRequest() // ステータスコード 400 を設定
-        .body(body); // レスポンスボディにバリデーションエラー詳細を含むオブジェクトを設定
+        .body(body); // レスポンスボディにエラー詳細を含むオブジェクトを設定
   }
 }
