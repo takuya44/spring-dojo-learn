@@ -10,6 +10,8 @@ import java.security.Principal;
 import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.DataBinder;
 import org.springframework.validation.FieldError;
@@ -35,6 +37,7 @@ public class UserRestController implements UsersApi {
 
   private final UserService userService;
   private final DuplicateUsernameValidator duplicateUsernameValidator;
+  private final MessageSource messageSource;
 
   /**
    * DataBinder にカスタムバリデータを登録するためのメソッド。
@@ -123,17 +126,19 @@ public class UserRestController implements UsersApi {
   }
 
   /**
-   * バリデーション失敗時に 400 Bad Request を返すための例外ハンドラ。
+   * バリデーションエラー時に 400 Bad Request を返す例外ハンドラ。
    *
-   * <p>このメソッドは {@link MethodArgumentNotValidException} をキャッチし、リクエストデータのバリデーションエラーを
-   * クライアントに返すためのレスポンスを生成します。</p>
+   * <p>このメソッドは {@link MethodArgumentNotValidException} をキャッチし、リクエストデータに含まれる
+   * バリデーションエラー情報をクライアントに返すレスポンスを生成します。</p>
    *
-   * <p>具体的な動作:</p>
+   * <p>処理の概要:</p>
    * <ul>
-   *   <li>例外オブジェクト {@link MethodArgumentNotValidException} からエラーメッセージを取得。</li>
-   *   <li>エラー詳細リストを構築し、カスタムレスポンスオブジェクト {@link BadRequest} に設定。</li>
-   *   <li>HTTP 400 Bad Request のレスポンスを返す。</li>
+   *   <li>例外オブジェクトからバリデーションエラー情報を抽出。</li>
+   *   <li>エラー詳細をリスト形式で整形し、カスタムレスポンスオブジェクト {@link BadRequest} に設定。</li>
+   *   <li>HTTP 400 Bad Request のレスポンスを生成して返却。</li>
    * </ul>
+   *
+   * <p>この例外ハンドラは、ユーザー入力のバリデーション失敗を通知し、詳細なエラー情報を含むレスポンスを提供します。</p>
    *
    * @param e バリデーションエラーを含む例外オブジェクト
    * @return バリデーションエラーの詳細を含む HTTP 400 Bad Request レスポンス
@@ -148,13 +153,16 @@ public class UserRestController implements UsersApi {
     // 例外オブジェクトからレスポンス用のプロパティをコピー
     BeanUtils.copyProperties(e.getBody(), body);
 
+    // 現在のロケールを取得（多言語対応）
+    var locale = LocaleContextHolder.getLocale();
+
     // バリデーションエラーの詳細をリスト形式で収集
     var errorDetailList = new ArrayList<ErrorDetail>();
 
     for (final FieldError fieldError : e.getBindingResult().getFieldErrors()) {
       // フィールドエラー情報を収集
       var pointer = "#/" + fieldError.getField(); // エラー発生箇所を JSON Pointer 形式で表現
-      var detail = fieldError.getCode(); // バリデーションエラーメッセージを取得
+      var detail = messageSource.getMessage(fieldError, locale); // ロケールに応じたバリデーションエラーメッセージを取得
 
       // ErrorDetail オブジェクトを生成
       var errorDetail = new ErrorDetail();
