@@ -315,4 +315,59 @@ class UserRestControllerTest {
             )
         ));
   }
+
+  /**
+   * POST /users: パスワードの長さまたは構成する文字列に違反がある場合、400 Bad Request を返すテスト。
+   *
+   * <p>このテストでは、以下の条件でエラーが発生することを確認します:</p>
+   * <ul>
+   *   <li>パスワードがバリデーションルールに違反している。</li>
+   *   <li>サーバーが適切なエラーレスポンスを返す。</li>
+   * </ul>
+   *
+   * <p>エラーレスポンスの詳細:</p>
+   * <ul>
+   *   <li>HTTP ステータスコード 400 Bad Request</li>
+   *   <li>詳細なエラーメッセージを含む "errors" フィールド</li>
+   * </ul>
+   *
+   * @throws Exception テスト実行中に予期しない例外が発生した場合
+   */
+  @Test
+  @DisplayName("POST /users：パスワードの長さ/構成する文字列に違反がある時、400 Bad Request")
+  public void createUser_badRequest_invalidPassword() throws Exception {
+    // ## Arrange ##
+    // バリデーションに違反するパスワード（短すぎる）を含むリクエストボディを作成
+    var newUserJson = """
+        {
+          "username": "username00",
+          "password": "too_short"
+        }
+        """;
+
+    // ## Act ##
+    // MockMvc を使用して POST リクエストを送信
+    var actual = mockMvc.perform(post("/users")
+        .with(csrf()) // CSRFトークンを含める（セキュリティ設定で必須）:403エラー対策
+        .contentType(MediaType.APPLICATION_JSON) // リクエストのContent-TypeをJSONに設定: 415エラー対策
+        .content(newUserJson)); // リクエストボディとしてユーザーデータを送信
+
+    // ## Assert ##
+    // サーバーが 400 Bad Request を返すことを確認
+    actual
+        .andExpect(status().isBadRequest())
+        .andExpect(jsonPath("$.title").value("Bad Request"))
+        .andExpect(jsonPath("$.status").value(400))
+        .andExpect(jsonPath("$.detail").value("Invalid request content."))
+        .andExpect(jsonPath("$.type").value("about:blank"))
+        .andExpect(jsonPath("$.instance").isEmpty())
+        .andExpect(jsonPath("$.errors", hasItem(
+                allOf(
+                    hasEntry("pointer", "#/password"), // "password" フィールドが原因であることを確認
+                    hasEntry("detail", // 詳細なエラーメッセージを確認
+                        "パスワードは10文字以上255文字以内で入力してください。半角の英大文字、英小文字、数字、および記号のみ使用できます。")
+                )
+            )
+        ));
+  }
 }
