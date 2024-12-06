@@ -155,4 +155,48 @@ class UserFormTest {
     assertThat(violations)
         .anyMatch(violation -> violation.getPropertyPath().toString().equals("username"));
   }
+
+  /**
+   * password フィールドに対するバリデーションの正常系テスト。
+   *
+   * <p>このテストでは、バリデーションルールに準拠したパスワードが
+   * 適切に検証され、バリデーション違反が発生しないことを確認します。</p>
+   *
+   * <p>テスト対象のパスワードは以下の通り:</p>
+   * <ul>
+   *   <li>10文字の数字のみのパスワード</li>
+   *   <li>255文字の最大長を持つパスワード</li>
+   *   <li>英字、数字、記号を含む複雑なパスワード</li>
+   * </ul>
+   *
+   * @param password テスト対象のパスワード
+   */
+  @ParameterizedTest
+  @DisplayName("password のバリデーション：成功")
+  @ValueSource(strings = {
+      // 10 characters
+      "1234567890",
+      // 255 characters
+      "12345678901234567890123456789012345678901234567890"
+          + "12345678901234567890123456789012345678901234567890"
+          + "12345678901234567890123456789012345678901234567890"
+          + "12345678901234567890123456789012345678901234567890"
+          + "12345678901234567890123456789012345678901234567890"
+          + "12345",
+      // alphabet + symbols
+      "~!@#$%^&*()_+QWERTYUIOP{}|ASDFGHJKL:ZXCVBNM<>?",
+  })
+  void password_success(String password) {
+    // ## Arrange ##
+    // テスト対象の UserForm インスタンスを作成
+    var cut = new UserForm("username00", password);
+
+    // ## Act ##
+    // バリデーションを実行し、違反内容を取得
+    var actual = validator.validate(cut);
+
+    // ## Assert ##
+    // バリデーション違反がないことを確認
+    assertThat(actual).isEmpty();
+  }
 }
