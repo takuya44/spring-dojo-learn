@@ -199,4 +199,51 @@ class UserFormTest {
     // バリデーション違反がないことを確認
     assertThat(actual).isEmpty();
   }
+
+  /**
+   * password フィールドに対するバリデーションの失敗ケースをテスト。
+   *
+   * <p>このテストでは、バリデーションルールに違反した入力データが
+   * 適切に検証され、バリデーション違反が発生することを確認します。</p>
+   *
+   * <p>テスト対象のパスワードは以下の通り:</p>
+   * <ul>
+   *   <li>9文字（最小長さ未満）のパスワード</li>
+   *   <li>256文字（最大長さ超過）のパスワード</li>
+   * </ul>
+   *
+   * @param password テスト対象のパスワード
+   */
+  @ParameterizedTest
+  @DisplayName("password のバリデーション：失敗")
+  @ValueSource(strings = {
+      // 9 characters (too short)
+      "123456789",
+      // 256 characters (too long)
+      "12345678901234567890123456789012345678901234567890"
+          + "12345678901234567890123456789012345678901234567890"
+          + "12345678901234567890123456789012345678901234567890"
+          + "12345678901234567890123456789012345678901234567890"
+          + "12345678901234567890123456789012345678901234567890"
+          + "123456",
+  })
+  void password_failure(String password) {
+    // ## Arrange ##
+    // テスト対象の UserForm インスタンスを作成
+    var cut = new UserForm("username00", password);
+
+    // ## Act ##
+    // バリデーションを実行し、違反内容を取得
+    var actual = validator.validate(cut);
+
+    // ## Assert ##
+    // バリデーション違反が存在することを確認
+    assertThat(actual).isNotEmpty();
+
+    // バリデーション違反の対象が "password" フィールドであることを検証
+    assertThat(actual)
+        .anyMatch(violation -> violation
+            .getPropertyPath().toString().equals("password")
+        );
+  }
 }
