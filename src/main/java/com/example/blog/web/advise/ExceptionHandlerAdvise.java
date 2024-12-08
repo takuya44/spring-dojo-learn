@@ -30,19 +30,11 @@ public class ExceptionHandlerAdvise {
    */
   @ExceptionHandler(RuntimeException.class)
   public ResponseEntity<InternalServerError> handleRuntimeException(RuntimeException e) {
-    // InternalServerError オブジェクトを作成し、エラーの詳細情報を設定
-    var error = new InternalServerError();
-    error.setType(null);
-    error.setTitle("Internal Server Error");
-    error.setStatus(500);
-    error.setDetail(null);
-    error.setInstance(null);
-
     // 500ステータスコードと、application/problem+json のコンテンツタイプを設定してレスポンスを返す
     return ResponseEntity
         .internalServerError() // HTTP 500 ステータスコードを返す
         .contentType(MediaType.APPLICATION_PROBLEM_JSON) // application/problem+json コンテンツタイプを設定
-        .body(error); // エラーオブジェクトをレスポンスのボディとして返す
+        .body(new InternalServerError()); // エラーオブジェクトをレスポンスのボディとして返す
   }
 
   /**

@@ -73,17 +73,21 @@ components:
         type:
           type: string
           format: uri
+          default: "about:blank"
         title:
           type: string
+          default: "Internal Server Error"
         status:
           type: integer
           format: int32
           default: 500
         detail:
           type: string
+          default: null
         instance:
           type: string
           format: uri
+          default: null
     ErrorDetail:
       description: BadRequest エラーが発生したときのエラーの詳細
       properties:
