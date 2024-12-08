@@ -122,7 +122,7 @@ class CSRFCookieRestControllerTest {
       result
           .andExpect(status().isInternalServerError())
           .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-          .andExpect(jsonPath("$.type").isEmpty())
+          .andExpect(jsonPath("$.type").value("about:blank"))
           .andExpect(jsonPath("$.title").value("Internal Server Error"))
           .andExpect(jsonPath("$.status").value(500))
           .andExpect(jsonPath("$.detail").isEmpty())
