@@ -3,6 +3,7 @@ package com.example.blog.web.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
+import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -128,5 +129,56 @@ class LoginLogoutTest {
     actual
         .andExpect(status().isOk()) // ステータスコード200 OKを確認
         .andExpect(authenticated().withUsername(username)); // 認証されたユーザー名を確認
+  }
+
+  /**
+   * ログイン失敗時の動作を検証するテスト（パスワードが無効な場合）。
+   *
+   * <p>このテストでは、以下を検証します:</p>
+   * <ul>
+   *   <li>登録済みのユーザーが、誤ったパスワードでログインを試みた場合、認証が失敗すること。</li>
+   *   <li>HTTPステータスコードが401 Unauthorizedであること。</li>
+   *   <li>認証情報が設定されない（未認証状態）であること。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>ユーザーサービスを使用して、新しいユーザーを登録。</li>
+   *   <li>MockMvcを使用して、誤ったパスワードでの認証リクエストを送信。</li>
+   *   <li>レスポンスのステータスコードおよび認証状態を検証。</li>
+   * </ol>
+   *
+   * @throws Exception HTTPリクエストの送信やレスポンス検証中にエラーが発生した場合
+   */
+  @Test
+  @DisplayName("POST /login: ログイン失敗 > パスワードが違う")
+  void login_failure_invalidPassword() throws Exception {
+    // ## Arrange ##
+    // ユーザー名とパスワードを指定して新しいユーザーを登録
+    var username = "username123";
+    var password = "password123";
+    userService.register(username, password);
+
+    // ログインリクエストのJSONボディを作成
+    var requestBody = """
+        {
+            "username": "%s",
+            "password": "%s"
+        }
+        """.formatted(username, "invalid_password");
+
+    // ## Act ##
+    // MockMvcを使用してPOSTリクエストを送信
+    var actual = mockMvc.perform(
+        post("/login")
+            .with(csrf()) // CSRFトークンを含める（Spring Securityの設定が有効な場合に必要）
+            .contentType(MediaType.APPLICATION_JSON) // リクエストのContent-TypeをJSONに設定
+            .content(requestBody) // リクエストボディにログイン情報を設定
+    );
+
+    // ## Assert ##
+    actual
+        .andExpect(status().isUnauthorized()) // ステータスコードが401 Unauthorizedであることを確認
+        .andExpect(unauthenticated()); // 認証情報が設定されないことを確認
   }
 }
