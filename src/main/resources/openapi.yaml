@@ -71,6 +71,21 @@ paths:
             application/json: { }
         '500':
           $ref: "#/components/responses/InternalServerErrorResponse"
+  /logout:
+    post:
+      tags: [ login-logout ]
+      operationId: logout
+      description: ログアウトします
+      security:
+        - csrfProtectionHeader: [ ]
+        - csrfProtectionCookie: [ ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json: { }
+        '500':
+          $ref: "#/components/responses/InternalServerErrorResponse"
   # POST /users
   /users:
     post:
