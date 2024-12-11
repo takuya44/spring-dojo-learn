@@ -184,4 +184,40 @@ class LoginLogoutTest {
         .andExpect(status().isUnauthorized()) // ステータスコードが401 Unauthorizedであることを確認
         .andExpect(unauthenticated()); // 認証情報が設定されないことを確認
   }
+
+  /**
+   * ログアウト成功時の動作を検証するテスト。
+   *
+   * <p>このテストでは、以下を検証します:</p>
+   * <ul>
+   *   <li>CSRFトークンを含む正しいログアウトリクエストを送信した場合にログアウトが成功すること。</li>
+   *   <li>レスポンスのステータスコードが200 OKであること。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>MockMvcを使用して、ログアウトエンドポイントにPOSTリクエストを送信。</li>
+   *   <li>レスポンスのステータスコードを検証。</li>
+   * </ol>
+   *
+   * @throws Exception HTTPリクエストの送信やレスポンス検証中にエラーが発生した場合
+   */
+  @Test
+  @DisplayName("POST /logout: ログアウト成功")
+  void logout_success() throws Exception {
+    // ## Arrange ##
+    // ログアウトリクエストには特別な準備は必要ない
+
+    // ## Act ##
+    // MockMvcを使用してPOSTリクエストを送信
+    var actual = mockMvc.perform(
+        post("/logout")
+            .with(csrf()) // CSRFトークンを含める（Spring Securityの設定が有効な場合に必要）
+            .contentType(MediaType.APPLICATION_JSON) // リクエストのContent-TypeをJSONに設定
+    );
+
+    // ## Assert ##
+    actual
+        .andExpect(status().isOk()); // ステータスコード200 OKを確認
+  }
 }
