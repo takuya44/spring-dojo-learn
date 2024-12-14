@@ -125,6 +125,8 @@ paths:
       operationId: createArticle
       summary: 記事を登録します
       description: body と title を指定して記事を作成します。ログインが必要。
+      security:
+        - cookieAuth: [ ]
       responses:
         '201':
           description: Created
@@ -253,3 +255,8 @@ components:
       type: apiKey
       in: cookie
       name: XSRF-TOKEN
+    cookieAuth:
+      description: ログインセッションIDを保持する_Cookie
+      type: apiKey
+      in: cookie
+      name: SESSION
