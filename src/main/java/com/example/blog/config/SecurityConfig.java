@@ -1,12 +1,15 @@
 package com.example.blog.config;
 
+import com.example.blog.model.Unauthorized;
 import com.example.blog.web.filter.CsrfCookieFilter;
 import com.example.blog.web.filter.JsonUsernamePasswordAuthenticationFilter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import java.net.URI;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -54,13 +57,26 @@ public class SecurityConfig {
         .authorizeHttpRequests((authorize) -> authorize
             .requestMatchers("/csrf-cookie").permitAll()
             .requestMatchers(HttpMethod.POST, "/users").permitAll()
-            .requestMatchers("/articles/**").permitAll()
+            .requestMatchers(HttpMethod.GET, "/articles/**").permitAll()
             .anyRequest().authenticated()
         )
         // アクセス拒否時のハンドリング
         .exceptionHandling(customizer -> customizer.accessDeniedHandler((req, res, auth) -> {
-          res.setStatus(HttpServletResponse.SC_FORBIDDEN);
-        }))
+                  res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                })
+                .authenticationEntryPoint((req, res, auth) -> {
+                  res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                  res.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+
+                  var body = new Unauthorized();
+                  body.setDetail("リクエストを実行するにはログインが必要です");
+                  body.instance(URI.create(req.getRequestURI()));
+
+                  // res.getOutputStream　で開いたストリームは
+                  // writeValue の中で close されるので明示的な close は不要。メモリリークしない
+                  objectMapper.writeValue(res.getOutputStream(), body);
+                })
+        )
         // ログアウト処理
         .logout(logout -> logout.logoutSuccessHandler((req, res, auth) -> {
           res.setStatus(HttpServletResponse.SC_OK);
