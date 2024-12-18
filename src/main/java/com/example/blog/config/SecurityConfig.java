@@ -82,10 +82,12 @@ public class SecurityConfig {
                 objectMapper.writeValue(res.getOutputStream(), body);
               }
             })
+            // 認証されていないリクエスト時の処理をカスタマイズ
             .authenticationEntryPoint((req, res, auth) -> {
               res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
               res.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
 
+              // Unauthorized エラー情報をカスタムオブジェクトに格納
               var body = new Unauthorized();
               body.setDetail("リクエストを実行するにはログインが必要です");
               body.instance(URI.create(req.getRequestURI()));
