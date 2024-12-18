@@ -72,4 +72,47 @@ class ArticleRestControllerTest {
         .andExpect(jsonPath("$.instance").value("/articles"))
     ;
   }
+
+  /**
+   * POST /articles: CSRFトークンが付与されていない場合の動作を検証するテスト。
+   *
+   * <p>このテストでは、リクエストにCSRFトークンが付与されていない場合にエラーレスポンスが返されることを確認します。</p>
+   *
+   * <p>テスト内容:</p>
+   * <ul>
+   *   <li>CSRFトークンなしでリクエストを送信すると、ステータスコード403 Forbiddenが返されること。</li>
+   *   <li>レスポンスに適切なエラーメッセージが含まれていること。</li>
+   * </ul>
+   *
+   * <p>テスト手順:</p>
+   * <ol>
+   *   <li>認証情報を付与したPOSTリクエストを送信するが、CSRFトークンは付与しない。</li>
+   *   <li>レスポンスのステータスコードが403 Forbiddenであることを確認。</li>
+   *   <li>レスポンスボディにエラーメッセージが正しく含まれていることを検証。</li>
+   * </ol>
+   *
+   * @throws Exception リクエスト処理中にエラーが発生した場合
+   */
+  @Test
+  @DisplayName("POST /articles: リクエストに CSRFトークンが付与されていない場合は 403 Forbidden を返す")
+  void createArticle_403Forbidden() throws Exception {
+    // ## Arrange ##
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        post("/articles")
+            // .with(csrf()) // CSRFトークンを付与しない
+            .with(user("user1"))
+    );
+
+    // ## Assert ##
+    actual
+        .andExpect(status().isForbidden())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Forbidden"))
+        .andExpect(jsonPath("$.status").value(403))
+        .andExpect(jsonPath("$.detail").value("CSRFトークンが不正です"))
+        .andExpect(jsonPath("$.instance").value("/articles"))
+    ;
+  }
 }
