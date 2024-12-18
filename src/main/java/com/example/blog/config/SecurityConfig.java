@@ -1,5 +1,6 @@
 package com.example.blog.config;
 
+import com.example.blog.model.Forbidden;
 import com.example.blog.model.Unauthorized;
 import com.example.blog.web.filter.CsrfCookieFilter;
 import com.example.blog.web.filter.JsonUsernamePasswordAuthenticationFilter;
@@ -26,6 +27,8 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
+import org.springframework.security.web.csrf.InvalidCsrfTokenException;
+import org.springframework.security.web.csrf.MissingCsrfTokenException;
 
 @Configuration
 @EnableWebSecurity
@@ -61,21 +64,36 @@ public class SecurityConfig {
             .anyRequest().authenticated()
         )
         // アクセス拒否時のハンドリング
-        .exceptionHandling(customizer -> customizer.accessDeniedHandler((req, res, auth) -> {
-                  res.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                })
-                .authenticationEntryPoint((req, res, auth) -> {
-                  res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                  res.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+        .exceptionHandling(customizer -> customizer
+            .accessDeniedHandler((req, res, e) -> {
+              // CSRFトークンがない、または不正な場合の処理
+              if (e instanceof MissingCsrfTokenException
+                  || e instanceof InvalidCsrfTokenException) {
+                res.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                res.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
 
-                  var body = new Unauthorized();
-                  body.setDetail("リクエストを実行するにはログインが必要です");
-                  body.instance(URI.create(req.getRequestURI()));
+                // Forbidden エラー情報をカスタムオブジェクトに格納
+                var body = new Forbidden();
+                body.setDetail("CSRFトークンが不正です");
+                body.instance(URI.create(req.getRequestURI()));
 
-                  // res.getOutputStream　で開いたストリームは
-                  // writeValue の中で close されるので明示的な close は不要。メモリリークしない
-                  objectMapper.writeValue(res.getOutputStream(), body);
-                })
+                // JavaオブジェクトをJSONデータに変換し、HTTPレスポンスボディに書き込む：ないとbodyが空になる
+                // objectMapper.writeValue の内部でストリームが閉じられるため、明示的な close は不要
+                objectMapper.writeValue(res.getOutputStream(), body);
+              }
+            })
+            .authenticationEntryPoint((req, res, auth) -> {
+              res.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+              res.setContentType(MediaType.APPLICATION_PROBLEM_JSON_VALUE);
+
+              var body = new Unauthorized();
+              body.setDetail("リクエストを実行するにはログインが必要です");
+              body.instance(URI.create(req.getRequestURI()));
+
+              // res.getOutputStream　で開いたストリームは
+              // writeValue の中で close されるので明示的な close は不要。メモリリークしない
+              objectMapper.writeValue(res.getOutputStream(), body);
+            })
         )
         // ログアウト処理
         .logout(logout -> logout.logoutSuccessHandler((req, res, auth) -> {
