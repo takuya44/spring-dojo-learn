@@ -137,7 +137,9 @@ paths:
                 type: string
                 example: "/articles/123"
           content:
-            application/json: { }
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleDTO"
         '401':
           $ref: "#/components/responses/UnauthorizedResponse"
         '403':
@@ -277,6 +279,25 @@ components:
         username:
           type: string
           example: username123
+    # 出力
+    ArticleDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        body:
+          type: string
+        author:
+          $ref: "#/components/schemas/UserDTO"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
   responses:
     InternalServerErrorResponse:
       description: Internal Server Error
