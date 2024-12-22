@@ -66,7 +66,7 @@ public class ArticleRestController implements ArticlesApi {
   public ResponseEntity<Void> createArticle() {
     // TODO: 実際の作成処理を実装
     return ResponseEntity
-        .created(URI.create("about:blank")) // 作成されたリソースのURIを設定
+        .created(URI.create("/articles/123")) // TODO 最終自動再版されたIDを使う
         .contentType(MediaType.APPLICATION_JSON)
         .build();
   }
