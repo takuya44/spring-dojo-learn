@@ -1,14 +1,14 @@
 package com.example.blog.web.controller.article;
 
 import com.example.blog.api.ArticlesApi;
+import com.example.blog.model.ArticleDTO;
+import com.example.blog.model.UserDTO;
 import com.example.blog.service.article.ArticleService;
-import com.example.blog.web.exception.ResourceNotFoundException;
 import java.net.URI;
+import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -26,33 +26,33 @@ public class ArticleRestController implements ArticlesApi {
 
   private final ArticleService articleService;
 
-  /**
-   * 指定されたIDの記事を表示します。
-   *
-   * <p>具体例:
-   * <pre>{@code
-   * // URL: http://localhost:8080/articles/1
-   * // レスポンス:
-   * // {
-   * //   "id": 1,
-   * //   "title": "This is title: id = 1",
-   * //   "content": "This is content",
-   * //   "createdAt": "2024-06-08T12:34:56.789",
-   * //   "updatedAt": "2024-06-08T12:34:56.789"
-   * // }
-   * }</pre>
-   * </p>
-   *
-   * @param id 表示する記事のID
-   * @return 指定されたIDの記事を表す {@link ArticleDTO} オブジェクト
-   * @throws ResourceNotFoundException 指定されたIDの記事が存在しない場合
-   */
-  @GetMapping("/articles/{id}")
-  public ArticleDTO showArticle(@PathVariable("id") long id) {
-    return articleService.findById(id)
-        .map(ArticleDTO::from)
-        .orElseThrow(ResourceNotFoundException::new);
-  }
+//  /** 練習用で作成したので、一度削除した。自作したArticleDTOクラスも削除すること
+//   * 指定されたIDの記事を表示します。
+//   *
+//   * <p>具体例:
+//   * <pre>{@code
+//   * // URL: http://localhost:8080/articles/1
+//   * // レスポンス:
+//   * // {
+//   * //   "id": 1,
+//   * //   "title": "This is title: id = 1",
+//   * //   "content": "This is content",
+//   * //   "createdAt": "2024-06-08T12:34:56.789",
+//   * //   "updatedAt": "2024-06-08T12:34:56.789"
+//   * // }
+//   * }</pre>
+//   * </p>
+//   *
+//   * @param id 表示する記事のID
+//   * @return 指定されたIDの記事を表す {@link ArticleDTO_自作クラス_使用してない} オブジェクト
+//   * @throws ResourceNotFoundException 指定されたIDの記事が存在しない場合
+//   */
+//  @GetMapping("/articles/{id}")
+//  public ArticleDTO_自作クラス_使用してない showArticle(@PathVariable("id") long id) {
+//    return articleService.findById(id)
+//        .map(ArticleDTO_自作クラス_使用してない::from)
+//        .orElseThrow(ResourceNotFoundException::new);
+//  }
 
   /**
    * 新しい記事を作成します。
@@ -63,11 +63,23 @@ public class ArticleRestController implements ArticlesApi {
    * @return HTTP 201 Createdレスポンス
    */
   @Override
-  public ResponseEntity<Void> createArticle() {
+  public ResponseEntity<ArticleDTO> createArticle() {
+    var userDTO = new UserDTO();
+    userDTO.setId(99L);
+    userDTO.setUsername("user1");
+
+    var body = new ArticleDTO();
+    body.setId(123L);
+    body.setTitle("test_title");
+    body.setBody("test_body");
+    body.setAuthor(userDTO);
+    body.setCreatedAt(OffsetDateTime.now());
+    body.setUpdatedAt(OffsetDateTime.now());
+
     // TODO: 実際の作成処理を実装
     return ResponseEntity
         .created(URI.create("/articles/123")) // TODO 最終自動再版されたIDを使う
         .contentType(MediaType.APPLICATION_JSON)
-        .build();
+        .body(body); // TODO mock実装中。最終DBに登録された物を渡す
   }
 }

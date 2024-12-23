@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * @param createdAt 記事の作成日時
  * @param updatedAt 記事の更新日時
  */
-public record ArticleDTO(
+public record ArticleDTO_自作クラス_使用してない(
     long id,
     String title,
     String content,
@@ -29,8 +29,8 @@ public record ArticleDTO(
    * @param entity ArticleEntityオブジェクト
    * @return ArticleDTOオブジェクト
    */
-  public static ArticleDTO from(ArticleEntity entity) {
-    return new ArticleDTO(
+  public static ArticleDTO_自作クラス_使用してない from(ArticleEntity entity) {
+    return new ArticleDTO_自作クラス_使用してない(
         entity.id(),
         entity.title(),
         entity.content(),
