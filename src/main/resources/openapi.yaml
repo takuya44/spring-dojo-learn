@@ -127,6 +127,11 @@ paths:
       description: body と title を指定して記事を作成します。ログインが必要。
       security:
         - cookieAuth: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleForm"
       responses:
         '201':
           description: Created
@@ -268,6 +273,19 @@ components:
           minLength: 10
           maxLength: 255
           example: password123
+    # エンドポイントへの入力
+    ArticleForm:
+      type: object
+      required:
+        - title
+        - body
+      properties:
+        title:
+          description: ブログ記事のタイトル
+          type: string
+        body:
+          description: ブログ記事の本文
+          type: string
     # 出力
     UserDTO:
       type: object
