@@ -2,6 +2,7 @@ package com.example.blog.web.controller.article;
 
 import com.example.blog.api.ArticlesApi;
 import com.example.blog.model.ArticleDTO;
+import com.example.blog.model.ArticleForm;
 import com.example.blog.model.UserDTO;
 import com.example.blog.service.article.ArticleService;
 import java.net.URI;
@@ -63,15 +64,15 @@ public class ArticleRestController implements ArticlesApi {
    * @return HTTP 201 Createdレスポンス
    */
   @Override
-  public ResponseEntity<ArticleDTO> createArticle() {
+  public ResponseEntity<ArticleDTO> createArticle(ArticleForm form) {
     var userDTO = new UserDTO();
     userDTO.setId(99L);
     userDTO.setUsername("user1");
 
     var body = new ArticleDTO();
     body.setId(123L);
-    body.setTitle("test_title");
-    body.setBody("test_body");
+    body.setTitle(form.getTitle());
+    body.setBody(form.getBody());
     body.setAuthor(userDTO);
     body.setCreatedAt(OffsetDateTime.now());
     body.setUpdatedAt(OffsetDateTime.now());
