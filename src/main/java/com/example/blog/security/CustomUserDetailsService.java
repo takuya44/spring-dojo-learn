@@ -2,7 +2,6 @@ package com.example.blog.security;
 
 import com.example.blog.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -17,11 +16,12 @@ public class CustomUserDetailsService implements UserDetailsService {
   @Override
   public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
     return userRepository.selectByUsername(username)
-        .map(r -> User.builder()
-            .username(r.getUsername())
-            .password(r.getPassword())
-            .disabled(!r.isEnabled())
-            .build()
+        .map(r -> new LoggedInUser(
+                r.getId(),
+                r.getUsername(),
+                r.getPassword(),
+                r.isEnabled()
+            )
         )
         .orElseThrow(() -> new UsernameNotFoundException(
             "given username is not found: username = " + username
