@@ -10,6 +10,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.example.blog.security.LoggedInUser;
 import com.example.blog.service.user.UserService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -60,10 +61,12 @@ class ArticleRestControllerTest {
   @DisplayName("POST /articles: 記事の新規作成に成功する")
   void createArticle_success() throws Exception {
     // ## Arrange ##
-    // 記事データを準備
+    // テストで使用するユーザー情報を作成: ログイン済みユーザーを模倣
+    var expectedUser = new LoggedInUser(1L, "test_user", "", true);
     var expectedTitle = "test_title";
     var expectedBody = "test_body";
-    var expectedUsername = "user1";
+
+    // JSON形式のリクエストボディを準備
     var bodyJson = """
         {
           "title": "%s",
@@ -75,7 +78,7 @@ class ArticleRestControllerTest {
     var actual = mockMvc.perform(
         post("/articles")
             .with(csrf())
-            .with(user(expectedUsername))
+            .with(user(expectedUser)) // 認証されたユーザーを設定
             .contentType(MediaType.APPLICATION_JSON)
             .content(bodyJson)
     );
@@ -88,8 +91,8 @@ class ArticleRestControllerTest {
         .andExpect(jsonPath("$.id").isNumber())
         .andExpect(jsonPath("$.title").value(expectedTitle))
         .andExpect(jsonPath("$.body").value(expectedBody))
-        .andExpect(jsonPath("$.author.id").isNumber())
-        .andExpect(jsonPath("$.author.username").value(expectedUsername))
+        .andExpect(jsonPath("$.author.id").value(expectedUser.getUserId()))
+        .andExpect(jsonPath("$.author.username").value(expectedUser.getUsername()))
         .andExpect(jsonPath("$.createdAt").isNotEmpty())
         .andExpect(jsonPath("$.updatedAt").isNotEmpty())
     ;
