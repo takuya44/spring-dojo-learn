@@ -4,12 +4,14 @@ import com.example.blog.api.ArticlesApi;
 import com.example.blog.model.ArticleDTO;
 import com.example.blog.model.ArticleForm;
 import com.example.blog.model.UserDTO;
+import com.example.blog.security.LoggedInUser;
 import com.example.blog.service.article.ArticleService;
 import java.net.URI;
 import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -61,14 +63,31 @@ public class ArticleRestController implements ArticlesApi {
    * <p>このエンドポイントは、記事の作成リクエストを受け付け、作成成功時に201 Createdレスポンスを返します。
    * Locationヘッダーには作成されたリソースのURIを設定します。</p>
    *
+   * <p>具体的な動作:</p>
+   * <ul>
+   *   <li>認証情報を使用して、現在ログインしているユーザーを特定します。</li>
+   *   <li>リクエストで受け取った記事情報をもとに、記事オブジェクトを作成します。</li>
+   *   <li>作成された記事の情報をレスポンスボディに含めます。</li>
+   *   <li>Locationヘッダーには作成されたリソースのURIを設定します。</li>
+   * </ul>
+   *
+   * @param form 新しい記事のデータを含むリクエストボディ
    * @return HTTP 201 Createdレスポンス
    */
   @Override
   public ResponseEntity<ArticleDTO> createArticle(ArticleForm form) {
-    var userDTO = new UserDTO();
-    userDTO.setId(99L);
-    userDTO.setUsername("user1");
+    // ## 1. 認証情報から現在ログインしているユーザー情報を取得 ##
+    var loggedInUser = (LoggedInUser) SecurityContextHolder
+        .getContext() // セキュリティコンテキストを取得
+        .getAuthentication() // 認証情報を取得
+        .getPrincipal(); // 現在ログインしているユーザーの情報を取得
 
+    // ユーザー情報をDTOオブジェクトに変換
+    var userDTO = new UserDTO();
+    userDTO.setId(loggedInUser.getUserId());
+    userDTO.setUsername(loggedInUser.getUsername());
+
+    // ## 2. 新しい記事データを作成 ##
     var body = new ArticleDTO();
     body.setId(123L);
     body.setTitle(form.getTitle());
@@ -77,10 +96,13 @@ public class ArticleRestController implements ArticlesApi {
     body.setCreatedAt(OffsetDateTime.now());
     body.setUpdatedAt(OffsetDateTime.now());
 
-    // TODO: 実際の作成処理を実装
+    // TODO: 実際の作成処理（データベース登録など）を実装する
+    // 現在はモック（仮）実装で固定値を返しています。
+
+    // ## 3. レスポンスを作成して返す ##
     return ResponseEntity
-        .created(URI.create("/articles/123")) // TODO 最終自動再版されたIDを使う
+        .created(URI.create("/articles/123"))
         .contentType(MediaType.APPLICATION_JSON)
-        .body(body); // TODO mock実装中。最終DBに登録された物を渡す
+        .body(body);
   }
 }
