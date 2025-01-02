@@ -63,7 +63,7 @@ class ArticleServiceMockTest {
   public void mock() {
     // ID 999 に対応する記事が存在する場合のモックを設定
     when(articleRepository.selectById(999)).thenReturn(Optional.of(
-        new ArticleEntity(999, "", "", null, null)
+        new ArticleEntity(999L, "", "", null, null)
     ));
 
     // ID 999 の記事が存在することを検証
@@ -102,7 +102,7 @@ class ArticleServiceMockTest {
     // ## Arrange ## モックでID 999 の記事を返すように設定
     when(articleRepository.selectById(999)).thenReturn(Optional.of(
         new ArticleEntity(
-            999,
+            999L,
             "title_999",
             "body_999",
             LocalDateTime.of(2010, 10, 1, 0, 0, 0),

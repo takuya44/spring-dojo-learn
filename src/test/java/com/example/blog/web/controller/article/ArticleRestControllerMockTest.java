@@ -11,6 +11,8 @@ import com.example.blog.config.PasswordEncoderConfig;
 import com.example.blog.config.SecurityConfig;
 import com.example.blog.service.article.ArticleEntity;
 import com.example.blog.service.article.ArticleService;
+import com.example.blog.web.exception.CustomAccessDeniedHandler;
+import com.example.blog.web.exception.CustomAuthenticationEntryPoint;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -39,7 +41,8 @@ import org.springframework.test.web.servlet.MockMvc;
  * </p>
  */
 @WebMvcTest(ArticleRestController.class)
-@Import({ObjectMapperConfig.class, SecurityConfig.class, PasswordEncoderConfig.class})
+@Import({ObjectMapperConfig.class, SecurityConfig.class, PasswordEncoderConfig.class,
+    CustomAccessDeniedHandler.class, CustomAuthenticationEntryPoint.class})
 class ArticleRestControllerMockTest {
 
   /**
@@ -89,7 +92,7 @@ class ArticleRestControllerMockTest {
     // ## Arrange ##
     // テスト用の期待されるArticleEntityオブジェクトを作成
     var expected = new ArticleEntity(
-        999,
+        999L,
         "title_999",
         "content_999",
         LocalDateTime.of(2022, 1, 2, 3, 4, 5),
@@ -97,7 +100,7 @@ class ArticleRestControllerMockTest {
     );
 
     // モックされたArticleServiceが指定されたIDの記事を返すように設定
-    when(mockArticleService.findById(expected.id())).thenReturn(Optional.of(expected));
+    when(mockArticleService.findById(999L)).thenReturn(Optional.of(expected));
 
     // ## Act ##
     // GETリクエストを送信し、レスポンスを受け取る

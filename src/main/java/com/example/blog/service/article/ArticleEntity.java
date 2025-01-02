@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * @param updatedAt 記事の更新日時
  */
 public record ArticleEntity(
-    long id,
+    Long id,
     String title,
     String content,
     LocalDateTime createdAt,
