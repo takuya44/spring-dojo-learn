@@ -66,11 +66,11 @@ class ArticleServiceTest {
         .isPresent()// Optional が空でないことを確認
         // 各フィールドの値が期待通りかどうかを確認
         .hasValueSatisfying(article -> {
-          assertThat(article.id()).isEqualTo(999);
-          assertThat(article.title()).isEqualTo("title_999");
-          assertThat(article.content()).isEqualTo("body_999");
-          assertThat(article.createdAt()).isEqualTo("2010-10-01T00:00:00");
-          assertThat(article.updatedAt()).isEqualTo("2010-11-01T00:00:00");
+          assertThat(article.getId()).isEqualTo(999);
+          assertThat(article.getTitle()).isEqualTo("title_999");
+          assertThat(article.getContent()).isEqualTo("body_999");
+          assertThat(article.getCreatedAt()).isEqualTo("2010-10-01T00:00:00");
+          assertThat(article.getUpdatedAt()).isEqualTo("2010-11-01T00:00:00");
         });
   }
 

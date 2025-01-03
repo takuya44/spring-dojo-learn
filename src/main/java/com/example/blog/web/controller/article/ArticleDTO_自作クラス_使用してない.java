@@ -31,11 +31,11 @@ public record ArticleDTO_自作クラス_使用してない(
    */
   public static ArticleDTO_自作クラス_使用してない from(ArticleEntity entity) {
     return new ArticleDTO_自作クラス_使用してない(
-        entity.id(),
-        entity.title(),
-        entity.content(),
-        entity.createdAt(),
-        entity.updatedAt()
+        entity.getId(),
+        entity.getTitle(),
+        entity.getContent(),
+        entity.getCreatedAt(),
+        entity.getUpdatedAt()
     );
   }
 }

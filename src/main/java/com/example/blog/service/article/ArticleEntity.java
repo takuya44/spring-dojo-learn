@@ -1,6 +1,8 @@
 package com.example.blog.service.article;
 
 import java.time.LocalDateTime;
+import lombok.AllArgsConstructor;
+import lombok.Data;
 
 /**
  * 記事を表すエンティティクラス。
@@ -14,12 +16,13 @@ import java.time.LocalDateTime;
  * @param createdAt 記事の作成日時
  * @param updatedAt 記事の更新日時
  */
-public record ArticleEntity(
-    Long id,
-    String title,
-    String content,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt
-) {
+@AllArgsConstructor
+@Data
+public class ArticleEntity {
 
+  private Long id;
+  private String title;
+  private String content;
+  private LocalDateTime createdAt;
+  private LocalDateTime updatedAt;
 }
