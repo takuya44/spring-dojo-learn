@@ -113,7 +113,7 @@ class ArticleRestControllerMockTest {
         .andExpect(status().isOk())  // ステータスコード200 OK
         .andExpect(jsonPath("$.id").value(expected.getId()))  // IDの検証
         .andExpect(jsonPath("$.title").value(expected.getTitle()))  // タイトルの検証
-        .andExpect(jsonPath("$.content").value(expected.getContent()))  // コンテンツの検証
+        .andExpect(jsonPath("$.content").value(expected.getBody()))  // コンテンツの検証
         .andExpect(jsonPath("$.createdAt").value(expected.getCreatedAt().toString()))  // 作成日時の検証
         .andExpect(jsonPath("$.updatedAt").value(expected.getUpdatedAt().toString()))  // 更新日時の検証
     ;

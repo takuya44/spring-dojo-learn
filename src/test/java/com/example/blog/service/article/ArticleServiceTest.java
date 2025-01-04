@@ -68,7 +68,7 @@ class ArticleServiceTest {
         .hasValueSatisfying(article -> {
           assertThat(article.getId()).isEqualTo(999);
           assertThat(article.getTitle()).isEqualTo("title_999");
-          assertThat(article.getContent()).isEqualTo("body_999");
+          assertThat(article.getBody()).isEqualTo("body_999");
           assertThat(article.getCreatedAt()).isEqualTo("2010-10-01T00:00:00");
           assertThat(article.getUpdatedAt()).isEqualTo("2010-11-01T00:00:00");
         });

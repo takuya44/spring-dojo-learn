@@ -24,7 +24,7 @@ import lombok.Data;
  *
  * @param id        記事のID
  * @param title     記事のタイトル
- * @param content   記事の内容
+ * @param body      記事の内容
  * @param author    記事の著者を表す {@link UserEntity}
  * @param createdAt 記事の作成日時
  * @param updatedAt 記事の更新日時
@@ -35,7 +35,7 @@ public class ArticleEntity {
 
   private Long id;
   private String title;
-  private String content;
+  private String body;
   private UserEntity author; // 作成者（著者）の情報
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;

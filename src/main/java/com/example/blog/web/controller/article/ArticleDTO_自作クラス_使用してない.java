@@ -33,7 +33,7 @@ public record ArticleDTO_自作クラス_使用してない(
     return new ArticleDTO_自作クラス_使用してない(
         entity.getId(),
         entity.getTitle(),
-        entity.getContent(),
+        entity.getBody(),
         entity.getCreatedAt(),
         entity.getUpdatedAt()
     );
