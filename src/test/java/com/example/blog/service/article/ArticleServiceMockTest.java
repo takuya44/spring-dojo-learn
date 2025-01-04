@@ -4,7 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
 import com.example.blog.repository.article.ArticleRepository;
-import java.time.LocalDateTime;
+import com.example.blog.util.TestDateTimeUtil;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -106,8 +106,8 @@ class ArticleServiceMockTest {
             "title_999",
             "body_999",
             null,
-            LocalDateTime.of(2010, 10, 1, 0, 0, 0),
-            LocalDateTime.of(2010, 11, 1, 0, 0, 0)
+            TestDateTimeUtil.of(2010, 10, 1, 0, 0),
+            TestDateTimeUtil.of(2010, 11, 1, 0, 0)
         )
     ));
 

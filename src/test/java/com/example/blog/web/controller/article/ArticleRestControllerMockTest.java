@@ -11,9 +11,9 @@ import com.example.blog.config.PasswordEncoderConfig;
 import com.example.blog.config.SecurityConfig;
 import com.example.blog.service.article.ArticleEntity;
 import com.example.blog.service.article.ArticleService;
+import com.example.blog.util.TestDateTimeUtil;
 import com.example.blog.web.exception.CustomAccessDeniedHandler;
 import com.example.blog.web.exception.CustomAuthenticationEntryPoint;
-import java.time.LocalDateTime;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -96,8 +96,8 @@ class ArticleRestControllerMockTest {
         "title_999",
         "content_999",
         null,
-        LocalDateTime.of(2022, 1, 2, 3, 4, 5),
-        LocalDateTime.of(2023, 1, 2, 3, 4, 5)
+        TestDateTimeUtil.of(2022, 1, 2, 3, 4),
+        TestDateTimeUtil.of(2023, 1, 2, 3, 4)
     );
 
     // モックされたArticleServiceが指定されたIDの記事を返すように設定

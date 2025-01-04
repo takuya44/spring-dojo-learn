@@ -1,7 +1,7 @@
 package com.example.blog.web.controller.article;
 
 import com.example.blog.service.article.ArticleEntity;
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 /**
  * 記事を表すデータ転送オブジェクト（DTO）。
@@ -19,8 +19,8 @@ public record ArticleDTO_自作クラス_使用してない(
     long id,
     String title,
     String content,
-    LocalDateTime createdAt,
-    LocalDateTime updatedAt
+    OffsetDateTime createdAt,
+    OffsetDateTime updatedAt
 ) {
 
   /**
