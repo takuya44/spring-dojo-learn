@@ -40,8 +40,14 @@ class ArticleRepositoryTest {
   @Test
   @DisplayName("selectById: 引数で指定されたIDの記事が存在するとき、ArticleEntity を返す")
   @Sql(statements = {"""
-      INSERT INTO articles (id, title, body, created_at, updated_at)
-      VALUES (999, 'title_999', 'content_999', '2010-10-01 00:00:00', '2010-11-01 00:00:00');
+      DELETE FROM articles;
+      DELETE FROM users;
+
+      INSERT INTO users (id, username, password, enabled)
+      VALUES (1, 'test_user1', 'test_password_1', true);
+
+      INSERT INTO articles (id, user_id, title, body, created_at, updated_at)
+      VALUES (999, 1, 'title_999', 'content_999', '2010-10-01 00:00:00', '2010-11-01 00:00:00');
       """
   })
   public void selectById_returnArticleEntity() {
@@ -58,8 +64,8 @@ class ArticleRepositoryTest {
           assertThat(article.getId()).isEqualTo(999);
           assertThat(article.getTitle()).isEqualTo("title_999");
           assertThat(article.getBody()).isEqualTo("content_999");
-          assertThat(article.getCreatedAt()).isEqualTo("2010-10-01T00:00:00");
-          assertThat(article.getUpdatedAt()).isEqualTo("2010-11-01T00:00:00");
+          assertThat(article.getCreatedAt()).isEqualTo("2010-10-01T00:00:00+09:00");
+          assertThat(article.getUpdatedAt()).isEqualTo("2010-11-01T00:00:00+09:00");
         });
   }
 

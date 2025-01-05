@@ -4,6 +4,7 @@ import com.example.blog.service.user.UserEntity;
 import java.time.OffsetDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * 記事を表すエンティティクラス。
@@ -29,6 +30,7 @@ import lombok.Data;
  * @param createdAt 記事の作成日時
  * @param updatedAt 記事の更新日時
  */
+@NoArgsConstructor
 @AllArgsConstructor
 @Data
 public class ArticleEntity {
