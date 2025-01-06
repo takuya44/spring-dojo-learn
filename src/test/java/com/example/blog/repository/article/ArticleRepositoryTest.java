@@ -3,7 +3,10 @@ package com.example.blog.repository.article;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.example.blog.config.MybatisDefaultDatasourceTest;
+import com.example.blog.repository.user.UserRepository;
 import com.example.blog.service.article.ArticleEntity;
+import com.example.blog.service.user.UserEntity;
+import com.example.blog.util.TestDateTimeUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,6 +18,8 @@ class ArticleRepositoryTest {
   // テスト対象（cut: class under test）のArticleRepositoryを自動的に注入
   @Autowired
   private ArticleRepository cut;
+  @Autowired
+  private UserRepository userRepository;
 
   // 単純なテストメソッド。cut（ArticleRepository）がnullではないことを検証。
   // これにより、Springのコンテナが正常に動作し、ArticleRepositoryが正しく注入されているかどうかを確認します。
@@ -93,5 +98,67 @@ class ArticleRepositoryTest {
 
     // ## Assert ##
     assertThat(actual).isEmpty();
+  }
+
+  /**
+   * 記事データの挿入処理を検証するテスト。
+   *
+   * <p>このテストでは、以下を検証します:</p>
+   * <ul>
+   *   <li>記事データが正しくデータベースに挿入されること。</li>
+   *   <li>挿入された記事データをデータベースから取得し、期待通りの値が返されること。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>テスト用のユーザーを準備し、データベースに挿入。</li>
+   *   <li>挿入する記事データ（タイトル、本文、作成者、作成日時、更新日時）を準備。</li>
+   *   <li>記事データをデータベースに挿入。</li>
+   *   <li>挿入した記事データをIDを指定して取得し、各フィールドが期待通りの値であることを検証。</li>
+   * </ol>
+   *
+   * <p>検証内容:</p>
+   * <ul>
+   *   <li>記事IDが正しく生成され、データベースに格納されていること。</li>
+   *   <li>記事のタイトルと本文が正しく格納されていること。</li>
+   *   <li>作成日時と更新日時が正しく格納されていること。</li>
+   *   <li>TODO: 作成者（author）の詳細な検証を追加。</li>
+   * </ul>
+   *
+   * @throws Exception テスト実行中に例外が発生した場合
+   */
+  @Test
+  @DisplayName("insert：記事データの作成に成功する")
+  void insert_success() {
+    // ## Arrange ##
+    // テストデータを準備する
+
+    // 1. ユーザー情報を準備してデータベースに挿入
+    var expectedUser = new UserEntity(null, "test_username", "test_password", true);
+    userRepository.insert(expectedUser); // ユーザーIDが自動生成されることを期待
+
+    // 2. 挿入する記事エンティティを準備
+    var expectedEntity = new ArticleEntity(
+        null, // IDは自動生成されることを期待
+        "test_title",
+        "test_body",
+        expectedUser,
+        TestDateTimeUtil.of(2020, 1, 1, 10, 30),
+        TestDateTimeUtil.of(2021, 1, 1, 10, 30)
+    );
+
+    // ## Act ##
+    cut.insert(expectedEntity);
+
+    // ## Assert ##
+    var actualOpt = cut.selectById(expectedEntity.getId());
+    assertThat(actualOpt).hasValueSatisfying(actualEntity -> {
+      assertThat(actualEntity.getId()).isEqualTo(expectedEntity.getId());
+      assertThat(actualEntity.getTitle()).isEqualTo(expectedEntity.getTitle());
+      assertThat(actualEntity.getBody()).isEqualTo(expectedEntity.getBody());
+      // TODO author
+      assertThat(actualEntity.getCreatedAt()).isEqualTo(expectedEntity.getCreatedAt());
+      assertThat(actualEntity.getUpdatedAt()).isEqualTo(expectedEntity.getUpdatedAt());
+    });
   }
 }
