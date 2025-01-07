@@ -2,6 +2,7 @@ package com.example.blog.service.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * ユーザー情報を表現するエンティティクラス。
@@ -23,6 +24,7 @@ import lombok.Data;
  *   <li>Getter と Setter メソッドを自動生成。</li>
  * </ul>
  */
+@NoArgsConstructor
 @AllArgsConstructor // 全てのフィールドを引数に取るコンストラクタを自動生成
 @Data // Getter、Setter、toString、equals、hashCode を自動生成
 public class UserEntity {
