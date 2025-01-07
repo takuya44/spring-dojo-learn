@@ -33,14 +33,25 @@ class ArticleRepositoryTest {
    * {@link ArticleEntity} を返すことを検証します。
    *
    * <p>テストの準備段階として、@Sqlアノテーションを使用して指定された記事のデータを
-   * データベースに挿入しています。この場合、ID 999の記事が 'title_999', 'content_999' という内容で 挿入されています。</p>
+   * データベースに挿入しています。この場合、ID 999 の記事が 'title_999', 'content_999' という内容で 挿入されています。</p>
    *
-   * <p>テストの主な検証点は次の通りです:
+   * <p>テストの主な検証点は次の通りです:</p>
    * <ul>
    *   <li>IDが999である記事が正しく返されること。</li>
-   *   <li>返された記事のタイトル、本文、作成日、更新日が正しいこと。</li>
+   *   <li>返された記事のタイトルが 'title_999' であること。</li>
+   *   <li>返された記事の本文が 'content_999' であること。</li>
+   *   <li>作成日時と更新日時が正しいこと。</li>
+   *   <li>記事の作成者（著者）のID、ユーザー名、パスワード、アカウント有効状態が正しいこと。</li>
    * </ul>
-   * </p>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>@Sqlアノテーションを使用して、テスト用データ（ユーザーと記事）をデータベースに挿入。</li>
+   *   <li>ArticleRepository#selectById メソッドを呼び出して、記事データを取得。</li>
+   *   <li>取得した記事データが期待通りの内容であることを検証。</li>
+   * </ol>
+   *
+   * @throws AssertionError テストが失敗した場合
    */
   @Test
   @DisplayName("selectById: 引数で指定されたIDの記事が存在するとき、ArticleEntity を返す")
@@ -71,6 +82,11 @@ class ArticleRepositoryTest {
           assertThat(article.getBody()).isEqualTo("content_999");
           assertThat(article.getCreatedAt()).isEqualTo("2010-10-01T00:00:00+09:00");
           assertThat(article.getUpdatedAt()).isEqualTo("2010-11-01T00:00:00+09:00");
+
+          assertThat(article.getAuthor().getId()).isEqualTo(1);
+          assertThat(article.getAuthor().getUsername()).isEqualTo("test_user1");
+          assertThat(article.getAuthor().getPassword()).isNull();
+          assertThat(article.getAuthor().isEnabled()).isEqualTo(true);
         });
   }
 
@@ -114,19 +130,21 @@ class ArticleRepositoryTest {
    *   <li>テスト用のユーザーを準備し、データベースに挿入。</li>
    *   <li>挿入する記事データ（タイトル、本文、作成者、作成日時、更新日時）を準備。</li>
    *   <li>記事データをデータベースに挿入。</li>
-   *   <li>挿入した記事データをIDを指定して取得し、各フィールドが期待通りの値であることを検証。</li>
+   *   <li>挿入した記事データをIDで取得し、各フィールドが期待通りの値であることを検証。</li>
    * </ol>
    *
    * <p>検証内容:</p>
    * <ul>
    *   <li>記事IDが正しく生成され、データベースに格納されていること。</li>
    *   <li>記事のタイトルと本文が正しく格納されていること。</li>
+   *   <li>作成者情報（ID、ユーザー名、アカウント有効状態）が正しく格納されていること。</li>
    *   <li>作成日時と更新日時が正しく格納されていること。</li>
-   *   <li>TODO: 作成者（author）の詳細な検証を追加。</li>
+   *   <li>作成者のパスワードが `null` であることを確認。</li>
    * </ul>
    *
    * @throws Exception テスト実行中に例外が発生した場合
    */
+
   @Test
   @DisplayName("insert：記事データの作成に成功する")
   void insert_success() {
@@ -156,7 +174,12 @@ class ArticleRepositoryTest {
       assertThat(actualEntity.getId()).isEqualTo(expectedEntity.getId());
       assertThat(actualEntity.getTitle()).isEqualTo(expectedEntity.getTitle());
       assertThat(actualEntity.getBody()).isEqualTo(expectedEntity.getBody());
-      // TODO author
+      assertThat(actualEntity.getAuthor().getId()).isEqualTo(expectedEntity.getAuthor().getId());
+      assertThat(actualEntity.getAuthor().getUsername()).isEqualTo(
+          expectedEntity.getAuthor().getUsername());
+      assertThat(actualEntity.getAuthor().getPassword()).isNull();
+      assertThat(actualEntity.getAuthor().isEnabled()).isEqualTo(
+          expectedEntity.getAuthor().isEnabled());
       assertThat(actualEntity.getCreatedAt()).isEqualTo(expectedEntity.getCreatedAt());
       assertThat(actualEntity.getUpdatedAt()).isEqualTo(expectedEntity.getUpdatedAt());
     });
