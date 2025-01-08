@@ -33,30 +33,46 @@ public class ArticleService {
   }
 
   /**
-   * 新しい記事を作成します。
+   * 新しい記事を作成するメソッド。
    *
-   * <p>このメソッドは、指定されたユーザーID、タイトル、および本文を使用して新しい記事を作成し、データベースに保存します。
-   * 作成日時と更新日時は現在のタイムスタンプが使用されます。</p>
+   * <p>このメソッドは以下の処理を行います:</p>
+   * <ul>
+   *   <li>現在のタイムスタンプを取得し、作成日時と更新日時として設定。</li>
+   *   <li>記事データ（タイトル、本文、作成者ID）を基に新しい {@link ArticleEntity} を作成。</li>
+   *   <li>記事データをデータベースに挿入。</li>
+   *   <li>挿入後、データベースから作成した記事データを再取得し、返却。</li>
+   * </ul>
    *
-   * <p>この操作はトランザクション内で実行され、データ整合性が保証されます。</p>
+   * <p>トランザクション処理が適用されており、メソッドの処理が正常に完了しない場合は、すべての変更がロールバックされます。</p>
    *
-   * @param userId 記事を作成するユーザーのID
+   * <p>主な例外:</p>
+   * <ul>
+   *   <li>{@link IllegalStateException}: 記事データがデータベースから取得できない場合にスローされます。</li>
+   * </ul>
+   *
+   * @param userId 作成者のユーザーID
    * @param title  記事のタイトル
-   * @param body   記事の内容
-   * @return 作成された {@link ArticleEntity} オブジェクト
+   * @param body   記事の本文
+   * @return 作成された記事の {@link ArticleEntity} オブジェクト
    */
   @Transactional
   public ArticleEntity create(long userId, String title, String body) {
+    // 現在のタイムスタンプを取得
     var timestamp = OffsetDateTime.now();
+
+    // 新しい記事エンティティを作成
     var newArticle = new ArticleEntity(
         null, // 新規作成のためIDはnull
         title,
         body,
         new UserEntity(userId, null, null, true),
         timestamp,
-        timestamp
+        timestamp // 更新日時（初期値は作成日時と同じ）
     );
     articleRepository.insert(newArticle);
-    return newArticle;
+
+    // 挿入された記事データを再取得して返却
+    return articleRepository.selectById(newArticle.getId())
+        .orElseThrow(() -> new IllegalStateException("never reached"));
   }
 }

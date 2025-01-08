@@ -1,102 +1,96 @@
 package com.example.blog.service.article;
 
-
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.example.blog.config.MybatisDefaultDatasourceTest;
+import com.example.blog.repository.user.UserRepository;
+import com.example.blog.service.user.UserEntity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.jdbc.Sql;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.annotation.Import;
 
 /**
- * {@link ArticleService} の単体テストクラス。
+ * {@link ArticleService} のテストクラス。
  *
- * <p>{@link SpringBootTest} アノテーションを使用して、Springコンテキストをロードし、
- * Springが管理するコンポーネント（例: @Service, @Repository）をテスト環境で利用可能にします。</p>
+ * <p>このクラスでは、記事作成サービスの動作を検証します。具体的には、articlesテーブルへのレコード挿入が
+ * 正常に行われるかを確認します。</p>
  *
- * <p>{@link Transactional} アノテーションを使用して、テストごとにトランザクションを張り、
- * テスト終了後にロールバックすることで、データベースの状態をテスト前の状態に戻します。</p>
+ * <p>使用するアノテーション:</p>
+ * <ul>
+ *   <li>{@link MybatisDefaultDatasourceTest}: MyBatisとデフォルトデータソース設定を使用したテスト環境を構築。</li>
+ *   <li>{@link Import}: {@link ArticleService} をテスト環境にインポートしてテスト対象に指定。</li>
+ * </ul>
  */
-@SpringBootTest
-@Transactional
+@MybatisDefaultDatasourceTest
+@Import(ArticleService.class)
 class ArticleServiceTest {
 
-  // テスト対象のArticleServiceをSpringから注入
   @Autowired
   private ArticleService cut;
+  @Autowired
+  private UserRepository userRepository;
 
   /**
-   * ArticleServiceがSpringコンテキスト内で正しく初期化され、 依存関係が注入されていることを検証するテストメソッド。
+   * {@link ArticleService} と {@link UserRepository} が正しく初期化されていることを確認します。
+   * <p>このテストはテスト環境のセットアップ確認用です。</p>
    */
   @Test
-  public void cut() {
+  void setup() {
+    // テスト対象のインスタンスがnullでないことを検証
     assertThat(cut).isNotNull();
+    assertThat(userRepository).isNotNull();
   }
 
   /**
-   * 指定されたIDの記事が存在する場合に、{@link ArticleService#findById(int)} が正しく {@link ArticleEntity}
-   * を返すことを検証するテストメソッド。
+   * 記事作成処理の動作を検証するテスト。
    *
-   * <p>テストの準備段階で、@Sqlアノテーションを使用して、テストデータとしてID 999の記事をデータベースに挿入しています。</p>
-   *
-   * <p>テストの主な検証項目:
+   * <p>このテストでは、以下を検証します:</p>
    * <ul>
-   *   <li>ID 999の記事が正しくデータベースから取得されること。</li>
-   *   <li>取得された記事の各フィールド（ID、タイトル、本文、作成日、更新日）が期待通りの値であること。</li>
+   *   <li>articlesテーブルに新しいレコードが挿入されること。</li>
+   *   <li>挿入された記事データが正しい値を持つこと。</li>
    * </ul>
-   * </p>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>テスト用のユーザーを準備してデータベースに挿入。</li>
+   *   <li>作成する記事のタイトルと本文を準備。</li>
+   *   <li>記事作成サービスを呼び出し、新しい記事を作成。</li>
+   *   <li>作成された記事が期待通りのデータを持っていることを検証。</li>
+   * </ol>
    */
   @Test
-  @DisplayName("findById: 指定されたIDの記事が存在するとき、ArticleEntityを返す")
-  @Sql(statements = {"""
-      INSERT INTO articles (id, title, body, created_at, updated_at)
-      VALUES (999, 'title_999', 'body_999', '2010-10-01 00:00:00', '2010-11-01 00:00:00');
-      """
-  })
-  public void findById_returnArticleEntity() {
+  @DisplayName("create: articles テーブルにレコードが insert される")
+  void create_success() {
     // ## Arrange ##
+    // ユーザー情報を準備してデータベースに挿入
+    var expectedUser = new UserEntity();
+    expectedUser.setUsername("test_user1"); // ユーザー名を設定
+    expectedUser.setPassword("test_password1"); // パスワードを設定
+    expectedUser.setEnabled(true); // 有効なユーザーであることを示す
+    // ユーザーをデータベースに挿入
+    userRepository.insert(expectedUser);
+
+    // 記事のタイトルと本文を準備
+    var expectedTitle = "test_article_title";
+    var expectedBody = "test_article_body";
 
     // ## Act ##
-    var actual = cut.findById(999);
+    // 記事作成サービスを呼び出し、新しい記事を作成
+    var actual = cut.create(expectedUser.getId(), expectedTitle, expectedBody);
 
     // ## Assert ##
-    assertThat(actual)
-        .isPresent()// Optional が空でないことを確認
-        // 各フィールドの値が期待通りかどうかを確認
-        .hasValueSatisfying(article -> {
-          assertThat(article.getId()).isEqualTo(999);
-          assertThat(article.getTitle()).isEqualTo("title_999");
-          assertThat(article.getBody()).isEqualTo("body_999");
-          assertThat(article.getCreatedAt()).isEqualTo("2010-10-01T00:00:00");
-          assertThat(article.getUpdatedAt()).isEqualTo("2010-11-01T00:00:00");
-        });
+    assertThat(actual.getId()).isNotNull();
+    assertThat(actual.getTitle()).isEqualTo(expectedTitle);
+    assertThat(actual.getBody()).isEqualTo(expectedBody);
+    assertThat(actual.getAuthor()).satisfies(user -> {
+      assertThat(user.getId()).isEqualTo(expectedUser.getId());
+      assertThat(user.getUsername()).isEqualTo(expectedUser.getUsername());
+      assertThat(user.getPassword()).isNull(); // パスワードはnullであるべき（セキュリティ対策）
+      assertThat(user.isEnabled()).isEqualTo(expectedUser.isEnabled());
+    });
+    assertThat(actual.getCreatedAt()).isNotNull();
+    assertThat(actual.getUpdatedAt()).isEqualTo(actual.getCreatedAt()); // 作成日時と更新日時が一致していることを確認
   }
 
-  /**
-   * 指定されたIDの記事が存在しない場合に、{@link ArticleService#findById(int)} が 空の {@link Optional}
-   * を返すことを検証するテストメソッド。
-   *
-   * <p>このテストでは、存在しない記事のID（-9）を使って検索を行い、結果として
-   * {@link Optional#isEmpty()} が true であることを確認します。</p>
-   *
-   * <p>主な検証項目:
-   * <ul>
-   *   <li>ID -9に該当する記事が存在しないこと。</li>
-   *   <li>その結果、メソッドが {@link Optional#empty()} を返すことを確認する。</li>
-   * </ul>
-   * </p>
-   */
-  @Test
-  @DisplayName("selectById: 指定されたIDの記事が存在しないとき、Optional.emptyを返す")
-  public void findById_returnEmpty() {
-    // ## Arrange ##
-
-    // ## Act ##
-    var actual = cut.findById(-9);
-
-    // ## Assert ##
-    assertThat(actual).isEmpty(); // 該当する記事がないため、空のOptionalを期待
-  }
 }
