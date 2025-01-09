@@ -1,13 +1,17 @@
 package com.example.blog.service.article;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import com.example.blog.config.MybatisDefaultDatasourceTest;
 import com.example.blog.repository.user.UserRepository;
+import com.example.blog.service.DateTimeService;
 import com.example.blog.service.user.UserEntity;
+import com.example.blog.util.TestDateTimeUtil;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 
 /**
@@ -30,6 +34,8 @@ class ArticleServiceTest {
   private ArticleService cut;
   @Autowired
   private UserRepository userRepository;
+  @MockBean
+  private DateTimeService mockDateTimeService;
 
   /**
    * {@link ArticleService} と {@link UserRepository} が正しく初期化されていることを確認します。
@@ -71,6 +77,10 @@ class ArticleServiceTest {
     // ユーザーをデータベースに挿入
     userRepository.insert(expectedUser);
 
+    // 日付を固定：この値がDBに登録される
+    var expectedCurrentDateTime = TestDateTimeUtil.of(2020, 1, 2, 10, 20);
+    when(mockDateTimeService.now()).thenReturn(expectedCurrentDateTime);
+
     // 記事のタイトルと本文を準備
     var expectedTitle = "test_article_title";
     var expectedBody = "test_article_body";
@@ -89,7 +99,7 @@ class ArticleServiceTest {
       assertThat(user.getPassword()).isNull(); // パスワードはnullであるべき（セキュリティ対策）
       assertThat(user.isEnabled()).isEqualTo(expectedUser.isEnabled());
     });
-    assertThat(actual.getCreatedAt()).isNotNull();
+    assertThat(actual.getCreatedAt()).isEqualTo(expectedCurrentDateTime);
     assertThat(actual.getUpdatedAt()).isEqualTo(actual.getCreatedAt()); // 作成日時と更新日時が一致していることを確認
   }
 

@@ -1,8 +1,8 @@
 package com.example.blog.service.article;
 
 import com.example.blog.repository.article.ArticleRepository;
+import com.example.blog.service.DateTimeService;
 import com.example.blog.service.user.UserEntity;
-import java.time.OffsetDateTime;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class ArticleService {
 
   private final ArticleRepository articleRepository;
+  private final DateTimeService dateTimeService;
 
   /**
    * 指定されたIDの記事を検索します。
@@ -58,7 +59,7 @@ public class ArticleService {
   @Transactional
   public ArticleEntity create(long userId, String title, String body) {
     // 現在のタイムスタンプを取得
-    var timestamp = OffsetDateTime.now();
+    var timestamp = dateTimeService.now();
 
     // 新しい記事エンティティを作成
     var newArticle = new ArticleEntity(
