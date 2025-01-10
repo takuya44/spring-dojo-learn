@@ -6,13 +6,12 @@ import com.example.blog.model.ArticleForm;
 import com.example.blog.model.UserDTO;
 import com.example.blog.security.LoggedInUser;
 import com.example.blog.service.article.ArticleService;
-import java.net.URI;
-import java.time.OffsetDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.util.UriComponentsBuilder;
 
 /**
  * 記事に関するREST APIエンドポイントを提供するコントローラークラス。
@@ -58,21 +57,21 @@ public class ArticleRestController implements ArticlesApi {
 //  }
 
   /**
-   * 新しい記事を作成します。
+   * 記事を新規作成するエンドポイント。
    *
-   * <p>このエンドポイントは、記事の作成リクエストを受け付け、作成成功時に201 Createdレスポンスを返します。
-   * Locationヘッダーには作成されたリソースのURIを設定します。</p>
+   * <p>このメソッドは、記事の作成リクエストを処理し、
+   * 作成成功時に HTTP 201 Created レスポンスを返します。 また、レスポンスの Location ヘッダーには作成されたリソースの URI を設定します。</p>
    *
-   * <p>具体的な動作:</p>
+   * <p>主な処理内容:</p>
    * <ul>
-   *   <li>認証情報を使用して、現在ログインしているユーザーを特定します。</li>
-   *   <li>リクエストで受け取った記事情報をもとに、記事オブジェクトを作成します。</li>
-   *   <li>作成された記事の情報をレスポンスボディに含めます。</li>
-   *   <li>Locationヘッダーには作成されたリソースのURIを設定します。</li>
+   *   <li>現在ログインしているユーザーを認証情報から取得します。</li>
+   *   <li>リクエストで受け取ったデータを使用して、新しい記事オブジェクトを作成します。</li>
+   *   <li>作成された記事情報を DTO に変換し、レスポンスボディに含めます。</li>
+   *   <li>Location ヘッダーにリソース URI を設定してレスポンスを返します。</li>
    * </ul>
    *
-   * @param form 新しい記事のデータを含むリクエストボディ
-   * @return HTTP 201 Createdレスポンス
+   * @param form 新しい記事のデータを含むリクエストボディ。
+   * @return HTTP 201 Created レスポンス。
    */
   @Override
   public ResponseEntity<ArticleDTO> createArticle(ArticleForm form) {
@@ -82,26 +81,35 @@ public class ArticleRestController implements ArticlesApi {
         .getAuthentication() // 認証情報を取得
         .getPrincipal(); // 現在ログインしているユーザーの情報を取得
 
+    // ## 2. 新しい記事を作成 ##
+    var newArticle = articleService.create(
+        loggedInUser.getUserId(),
+        form.getTitle(),
+        form.getBody()
+    );
+
     // ユーザー情報をDTOオブジェクトに変換
     var userDTO = new UserDTO();
-    userDTO.setId(loggedInUser.getUserId());
-    userDTO.setUsername(loggedInUser.getUsername());
+    userDTO.setId(newArticle.getAuthor().getId());
+    userDTO.setUsername(newArticle.getAuthor().getUsername());
 
-    // ## 2. 新しい記事データを作成 ##
+    // 記事データを DTO に変換
     var body = new ArticleDTO();
-    body.setId(123L);
-    body.setTitle(form.getTitle());
-    body.setBody(form.getBody());
+    body.setId(newArticle.getId());
+    body.setTitle(newArticle.getTitle());
+    body.setBody(newArticle.getBody());
     body.setAuthor(userDTO);
-    body.setCreatedAt(OffsetDateTime.now());
-    body.setUpdatedAt(OffsetDateTime.now());
+    body.setCreatedAt(newArticle.getCreatedAt());
+    body.setUpdatedAt(newArticle.getUpdatedAt());
 
-    // TODO: 実際の作成処理（データベース登録など）を実装する
-    // 現在はモック（仮）実装で固定値を返しています。
+    // ## 3. Location ヘッダーにリソース URI を設定 ##
+    var location = UriComponentsBuilder.fromPath("/articles/{id}")
+        .buildAndExpand(newArticle.getId())
+        .toUri();
 
-    // ## 3. レスポンスを作成して返す ##
+    // ## 4. HTTP レスポンスを返す ##
     return ResponseEntity
-        .created(URI.create("/articles/123"))
+        .created(location) // HTTP 201 Created ステータスと Location ヘッダーを設定
         .contentType(MediaType.APPLICATION_JSON)
         .body(body);
   }

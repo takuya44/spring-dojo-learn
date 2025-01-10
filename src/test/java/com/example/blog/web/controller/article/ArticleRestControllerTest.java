@@ -62,7 +62,9 @@ class ArticleRestControllerTest {
   void createArticle_success() throws Exception {
     // ## Arrange ##
     // テストで使用するユーザー情報を作成: ログイン済みユーザーを模倣
-    var expectedUser = new LoggedInUser(1L, "test_user", "", true);
+    var newUser = userService.register("test_username", "test_password");
+    var expectedUser = new LoggedInUser(newUser.getId(), newUser.getUsername(),
+        newUser.getPassword(), true);
     var expectedTitle = "test_title";
     var expectedBody = "test_body";
 
@@ -93,8 +95,8 @@ class ArticleRestControllerTest {
         .andExpect(jsonPath("$.body").value(expectedBody))
         .andExpect(jsonPath("$.author.id").value(expectedUser.getUserId()))
         .andExpect(jsonPath("$.author.username").value(expectedUser.getUsername()))
-        .andExpect(jsonPath("$.createdAt").isNotEmpty())
-        .andExpect(jsonPath("$.updatedAt").isNotEmpty())
+        .andExpect(jsonPath("$.createdAt").isNotEmpty()) // UserServiceTestで検証済み
+        .andExpect(jsonPath("$.updatedAt").isNotEmpty()) // UserServiceTestで検証済み
     ;
   }
 
