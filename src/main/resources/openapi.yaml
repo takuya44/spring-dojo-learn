@@ -145,6 +145,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ArticleDTO"
+        '400':
+          $ref: "#/components/responses/BadRequestResponse"
         '401':
           $ref: "#/components/responses/UnauthorizedResponse"
         '403':
@@ -283,6 +285,7 @@ components:
         title:
           description: ブログ記事のタイトル
           type: string
+          pattern: '^.{1,255}$'
         body:
           description: ブログ記事の本文
           type: string
