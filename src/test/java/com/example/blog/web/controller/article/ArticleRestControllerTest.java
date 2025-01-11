@@ -1,6 +1,9 @@
 package com.example.blog.web.controller.article;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -97,6 +100,71 @@ class ArticleRestControllerTest {
         .andExpect(jsonPath("$.author.username").value(expectedUser.getUsername()))
         .andExpect(jsonPath("$.createdAt").isNotEmpty()) // UserServiceTestで検証済み
         .andExpect(jsonPath("$.updatedAt").isNotEmpty()) // UserServiceTestで検証済み
+    ;
+  }
+
+  /**
+   * POST /articles: リクエストの title フィールドがバリデーションNGのとき、400 Bad Request を返すテスト。
+   *
+   * <p>このテストでは、以下の条件でエラーが発生することを確認します:</p>
+   * <ul>
+   *   <li>title フィールドがバリデーションルールに違反している。</li>
+   *   <li>サーバーが適切なエラーレスポンスを返す。</li>
+   * </ul>
+   *
+   * <p>エラーレスポンスの詳細:</p>
+   * <ul>
+   *   <li>HTTP ステータスコード 400 Bad Request</li>
+   *   <li>詳細なエラーメッセージを含む "errors" フィールド</li>
+   * </ul>
+   *
+   * <p>このバリデーションルール（title は 1 文字以上 255 文字以内）は、記事のタイトルがユーザーにとって分かりやすく、適切な長さであることを保証するために重要です。
+   * 長すぎるタイトルはユーザー体験を損ない、短すぎるタイトルは内容の曖昧さを引き起こす可能性があります。</p>
+   *
+   * @throws Exception テスト実行中に予期しない例外が発生した場合
+   */
+  @Test
+  @DisplayName("POST /articles: リクエストの title フィールドがバリデーションNGのとき、400 BadRequest")
+  void createArticles_400BadRequest() throws Exception {
+    // ## Arrange ##
+    // テストで使用するユーザー情報を作成: ログイン済みユーザーを模倣
+    var newUser = userService.register("test_username", "test_password");
+    var expectedUser = new LoggedInUser(newUser.getId(), newUser.getUsername(),
+        newUser.getPassword(), true); // ログイン済みユーザーの模倣オブジェクトを生成
+
+    // バリデーションに違反する title を含むリクエストボディを作成
+    var bodyJson = """
+        {
+          "title": "",
+          "body": "OK_body"
+        }
+        """;
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        post("/articles")
+            .with(csrf()) // CSRF トークンを含める（セキュリティ設定で必須）:403エラー対策
+            .with(user(expectedUser)) // 認証されたユーザーを設定
+            .contentType(MediaType.APPLICATION_JSON) // リクエストのContent-TypeをJSONに設定: 415エラー対策
+            .content(bodyJson)
+    );
+
+    // ## Assert ##
+    // サーバーが 400 Bad Request を返すことを確認
+    actual
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Bad Request"))
+        .andExpect(jsonPath("$.status").value(400))
+        .andExpect(jsonPath("$.detail").value("Invalid request content."))
+        .andExpect(jsonPath("$.type").value("about:blank"))
+        .andExpect(jsonPath("$.instance").isEmpty())
+        .andExpect(jsonPath("$.errors", hasItem(
+            allOf(
+                hasEntry("pointer", "#/title"), // "title" フィールドが原因であることを確認
+                hasEntry("detail", "タイトルは1文字以上255文字以内で入力してください。")
+            )
+        )))
     ;
   }
 
