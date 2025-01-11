@@ -1,9 +1,18 @@
 package com.example.blog.web.advise;
 
+import com.example.blog.model.BadRequest;
+import com.example.blog.model.ErrorDetail;
 import com.example.blog.model.InternalServerError;
 import com.example.blog.web.exception.ResourceNotFoundException;
+import java.util.ArrayList;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
+import org.springframework.context.MessageSource;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -16,7 +25,69 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * </p>
  */
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class ExceptionHandlerAdvise {
+
+  private final MessageSource messageSource;
+
+  /**
+   * バリデーションエラー時に 400 Bad Request を返す例外ハンドラ。
+   *
+   * <p>このメソッドは {@link MethodArgumentNotValidException} をキャッチし、リクエストデータに含まれる
+   * バリデーションエラー情報をクライアントに返すレスポンスを生成します。</p>
+   *
+   * <p>処理の概要:</p>
+   * <ul>
+   *   <li>例外オブジェクトからバリデーションエラー情報を抽出。</li>
+   *   <li>エラー詳細をリスト形式で整形し、カスタムレスポンスオブジェクト {@link BadRequest} に設定。</li>
+   *   <li>HTTP 400 Bad Request のレスポンスを生成して返却。</li>
+   * </ul>
+   *
+   * <p>この例外ハンドラは、ユーザー入力のバリデーション失敗を通知し、詳細なエラー情報を含むレスポンスを提供します。</p>
+   *
+   * @param e バリデーションエラーを含む例外オブジェクト
+   * @return バリデーションエラーの詳細を含む HTTP 400 Bad Request レスポンス
+   */
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<BadRequest> handleMethodArgumentNotValidException(
+      MethodArgumentNotValidException e
+  ) {
+    // バリデーションエラー情報を格納するカスタムオブジェクトを作成
+    var body = new BadRequest();
+
+    // 例外オブジェクトからレスポンス用のプロパティをコピー
+    // ここでは、例外から取得したエラー情報をカスタムオブジェクトに転写
+    BeanUtils.copyProperties(e.getBody(), body);
+
+    // 現在のロケールを取得（多言語対応）
+    var locale = LocaleContextHolder.getLocale();
+
+    // バリデーションエラーの詳細をリスト形式で収集
+    var errorDetailList = new ArrayList<ErrorDetail>();
+
+    for (final FieldError fieldError : e.getBindingResult().getFieldErrors()) {
+      // フィールドエラー情報を収集
+      var pointer = "#/" + fieldError.getField(); // エラー発生箇所を JSON Pointer 形式で表現
+      var detail = messageSource.getMessage(fieldError, locale); // ロケールに応じたバリデーションエラーメッセージを取得
+
+      // ErrorDetail オブジェクトを生成
+      var errorDetail = new ErrorDetail();
+      errorDetail.setPointer(pointer);
+      errorDetail.setDetail(detail);
+
+      // エラーディテールリストに追加
+      errorDetailList.add(errorDetail);
+    }
+
+    // エラーディテールリストをレスポンスオブジェクトに設定
+    body.setErrors(errorDetailList);
+
+    // HTTP 400 Bad Request レスポンスを生成
+    return ResponseEntity
+        .badRequest() // ステータスコード 400 を設定
+        .contentType(MediaType.APPLICATION_PROBLEM_JSON) // application/problem+json コンテンツタイプを設定
+        .body(body); // レスポンスボディにエラー詳細を含むオブジェクトを設定
+  }
 
   /**
    * RuntimeException をキャッチし、500 Internal Server Error のレスポンスを返す。

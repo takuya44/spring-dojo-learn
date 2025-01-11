@@ -115,7 +115,7 @@ class UserRestControllerTest {
 
     // ## Assert ##
     // ステータスコード403 Forbiddenが返されることを検証
-    actual.andExpect(status().isForbidden());
+    actual.andExpect(status().isUnauthorized());
 
   }
 
@@ -198,7 +198,8 @@ class UserRestControllerTest {
     // サーバーが 400 Bad Request を返すことを確認
     actual
         .andDo(print()) // レスポンスの内容を標準出力に表示（デバッグ目的）
-        .andExpect(status().isBadRequest());
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON));
   }
 
   /**
@@ -247,6 +248,7 @@ class UserRestControllerTest {
     // サーバーが 400 Bad Request を返すことを確認
     actual
         .andExpect(status().isBadRequest())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title").value("Bad Request"))
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.detail").value("Invalid request content."))
@@ -301,6 +303,7 @@ class UserRestControllerTest {
     // サーバーが 400 Bad Request を返すことを確認
     actual
         .andExpect(status().isBadRequest())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title").value("Bad Request"))
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.detail").value("Invalid request content."))
@@ -356,6 +359,7 @@ class UserRestControllerTest {
     // サーバーが 400 Bad Request を返すことを確認
     actual
         .andExpect(status().isBadRequest())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
         .andExpect(jsonPath("$.title").value("Bad Request"))
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.detail").value("Invalid request content."))

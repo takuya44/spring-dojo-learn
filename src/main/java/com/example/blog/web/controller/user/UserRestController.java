@@ -2,21 +2,14 @@ package com.example.blog.web.controller.user;
 
 import com.example.blog.api.UsersApi;
 import com.example.blog.model.BadRequest;
-import com.example.blog.model.ErrorDetail;
 import com.example.blog.model.UserDTO;
 import com.example.blog.model.UserForm;
 import com.example.blog.service.user.UserService;
 import java.security.Principal;
-import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.DataBinder;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.RestController;
@@ -37,7 +30,7 @@ public class UserRestController implements UsersApi {
 
   private final UserService userService;
   private final DuplicateUsernameValidator duplicateUsernameValidator;
-  private final MessageSource messageSource;
+//  private final MessageSource messageSource;
 
   /**
    * DataBinder にカスタムバリデータを登録するためのメソッド。
@@ -143,42 +136,43 @@ public class UserRestController implements UsersApi {
    * @param e バリデーションエラーを含む例外オブジェクト
    * @return バリデーションエラーの詳細を含む HTTP 400 Bad Request レスポンス
    */
-  @ExceptionHandler(MethodArgumentNotValidException.class)
-  public ResponseEntity<BadRequest> handleMethodArgumentNotValidException(
-      MethodArgumentNotValidException e
-  ) {
-    // バリデーションエラー情報を格納するカスタムオブジェクトを作成
-    var body = new BadRequest();
-
-    // 例外オブジェクトからレスポンス用のプロパティをコピー
-    BeanUtils.copyProperties(e.getBody(), body);
-
-    // 現在のロケールを取得（多言語対応）
-    var locale = LocaleContextHolder.getLocale();
-
-    // バリデーションエラーの詳細をリスト形式で収集
-    var errorDetailList = new ArrayList<ErrorDetail>();
-
-    for (final FieldError fieldError : e.getBindingResult().getFieldErrors()) {
-      // フィールドエラー情報を収集
-      var pointer = "#/" + fieldError.getField(); // エラー発生箇所を JSON Pointer 形式で表現
-      var detail = messageSource.getMessage(fieldError, locale); // ロケールに応じたバリデーションエラーメッセージを取得
-
-      // ErrorDetail オブジェクトを生成
-      var errorDetail = new ErrorDetail();
-      errorDetail.setPointer(pointer);
-      errorDetail.setDetail(detail);
-
-      // エラーディテールリストに追加
-      errorDetailList.add(errorDetail);
-    }
-
-    // エラーディテールリストをレスポンスオブジェクトに設定
-    body.setErrors(errorDetailList);
-
-    // HTTP 400 Bad Request レスポンスを生成
-    return ResponseEntity
-        .badRequest() // ステータスコード 400 を設定
-        .body(body); // レスポンスボディにエラー詳細を含むオブジェクトを設定
-  }
+//  削除理由：Userクラスだけではなく、他のクラスでも使用するためAdviceクラスに移行した。
+//  @ExceptionHandler(MethodArgumentNotValidException.class)
+//  public ResponseEntity<BadRequest> handleMethodArgumentNotValidException(
+//      MethodArgumentNotValidException e
+//  ) {
+//    // バリデーションエラー情報を格納するカスタムオブジェクトを作成
+//    var body = new BadRequest();
+//
+//    // 例外オブジェクトからレスポンス用のプロパティをコピー
+//    BeanUtils.copyProperties(e.getBody(), body);
+//
+//    // 現在のロケールを取得（多言語対応）
+//    var locale = LocaleContextHolder.getLocale();
+//
+//    // バリデーションエラーの詳細をリスト形式で収集
+//    var errorDetailList = new ArrayList<ErrorDetail>();
+//
+//    for (final FieldError fieldError : e.getBindingResult().getFieldErrors()) {
+//      // フィールドエラー情報を収集
+//      var pointer = "#/" + fieldError.getField(); // エラー発生箇所を JSON Pointer 形式で表現
+//      var detail = messageSource.getMessage(fieldError, locale); // ロケールに応じたバリデーションエラーメッセージを取得
+//
+//      // ErrorDetail オブジェクトを生成
+//      var errorDetail = new ErrorDetail();
+//      errorDetail.setPointer(pointer);
+//      errorDetail.setDetail(detail);
+//
+//      // エラーディテールリストに追加
+//      errorDetailList.add(errorDetail);
+//    }
+//
+//    // エラーディテールリストをレスポンスオブジェクトに設定
+//    body.setErrors(errorDetailList);
+//
+//    // HTTP 400 Bad Request レスポンスを生成
+//    return ResponseEntity
+//        .badRequest() // ステータスコード 400 を設定
+//        .body(body); // レスポンスボディにエラー詳細を含むオブジェクトを設定
+//  }
 }
