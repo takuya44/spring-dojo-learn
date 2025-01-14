@@ -27,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
-class ArticleRestControllerTest {
+class ArticleRestControllerCreateArticleTest {
 
   @Autowired
   private MockMvc mockMvc;
