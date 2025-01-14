@@ -153,6 +153,20 @@ paths:
           $ref: "#/components/responses/ForbiddenResponse"
         '500':
           $ref: "#/components/responses/InternalServerErrorResponse"
+    get:
+      tags: [ articles ]
+      summary: 記事の一覧を取得します
+      description: >
+        記事の一覧を取得します。
+        パフォーマンス対策により記事本文はレスポンスに含まれません。
+      operationId: getArticleList
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleListDTO"
 components:
   schemas:
     InternalServerError:
@@ -321,6 +335,29 @@ components:
         updatedAt:
           type: string
           format: date-time
+    ArticleListItemDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        title:
+          type: string
+        author:
+          $ref: "#/components/schemas/UserDTO"
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ArticleListDTO:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArticleListItemDTO"
   responses:
     InternalServerErrorResponse:
       description: Internal Server Error
