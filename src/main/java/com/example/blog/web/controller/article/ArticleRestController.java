@@ -3,6 +3,7 @@ package com.example.blog.web.controller.article;
 import com.example.blog.api.ArticlesApi;
 import com.example.blog.model.ArticleDTO;
 import com.example.blog.model.ArticleForm;
+import com.example.blog.model.ArticleListDTO;
 import com.example.blog.model.UserDTO;
 import com.example.blog.security.LoggedInUser;
 import com.example.blog.service.article.ArticleService;
@@ -112,5 +113,11 @@ public class ArticleRestController implements ArticlesApi {
         .created(location) // HTTP 201 Created ステータスと Location ヘッダーを設定
         .contentType(MediaType.APPLICATION_JSON)
         .body(body);
+  }
+
+  @Override
+  public ResponseEntity<ArticleListDTO> getArticleList() {
+    return ResponseEntity
+        .ok(new ArticleListDTO());
   }
 }
