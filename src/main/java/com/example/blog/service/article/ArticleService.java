@@ -3,6 +3,7 @@ package com.example.blog.service.article;
 import com.example.blog.repository.article.ArticleRepository;
 import com.example.blog.service.DateTimeService;
 import com.example.blog.service.user.UserEntity;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -75,5 +76,9 @@ public class ArticleService {
     // 挿入された記事データを再取得して返却
     return articleRepository.selectById(newArticle.getId())
         .orElseThrow(() -> new IllegalStateException("never reached"));
+  }
+
+  public List<ArticleEntity> findAll() {
+    return articleRepository.selectAll();
   }
 }
