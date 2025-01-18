@@ -11,6 +11,7 @@ import com.example.blog.service.DateTimeService;
 import com.example.blog.service.article.ArticleService;
 import com.example.blog.service.user.UserService;
 import com.example.blog.util.TestDateTimeUtil;
+import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +19,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.jdbc.Sql;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -80,18 +82,27 @@ class ArticleRestControllerListArticlesTest {
    *   <li>正しいレスポンスヘッダー（ステータスコードおよび Content-Type）が返されること。</li>
    *   <li>レスポンスボディに期待される記事データが含まれること。</li>
    *   <li>レスポンスに余計なデータ（例: パスワードフィールド）が含まれないこと。</li>
+   *   <li>日付が ISO-8601 形式（秒まで含む）で返されること。</li>
    * </ul>
+   *
+   * <p>日付のフォーマットは {@code yyyy-MM-dd'T'HH:mm:ssXXX} を使用して検証します。</p>
    *
    * @throws Exception テスト実行中に発生する例外
    */
   @Test
   @DisplayName("GET /articles: 記事の一覧を取得できる")
+  @Sql(statements = {"""
+      DELETE FROM articles;
+      """
+  })
   void listArticles_success() throws Exception {
     // ## Arrange ##
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+
     // 日付を固定：この値がDBに登録される
     when(mockDateTimeService.now())
-        .thenReturn(TestDateTimeUtil.of(2022, 1, 1, 10, 10))
-        .thenReturn(TestDateTimeUtil.of(2022, 2, 2, 20, 20));
+        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20))
+        .thenReturn(TestDateTimeUtil.of(2022, 2, 2, 20, 30));
 
     var user1 = userService.register("test_username1", "test_password1");
     var expectedArticle1 = articleService.create(user1.getId(), "test_title1", "test_body1");
@@ -119,9 +130,11 @@ class ArticleRestControllerListArticlesTest {
             expectedArticle2.getAuthor().getUsername()))
         .andExpect(jsonPath("$.items[0].author.password").doesNotExist())
         .andExpect(
-            jsonPath("$.items[0].createdAt").value(expectedArticle2.getCreatedAt().toString()))
+            jsonPath("$.items[0].createdAt").value(
+                expectedArticle2.getCreatedAt().format(formatter)))
         .andExpect(
-            jsonPath("$.items[0].updatedAt").value(expectedArticle2.getUpdatedAt().toString()))
+            jsonPath("$.items[0].updatedAt").value(
+                expectedArticle2.getUpdatedAt().format(formatter)))
     ;
 
     // response body: item[1]
@@ -134,9 +147,11 @@ class ArticleRestControllerListArticlesTest {
             expectedArticle1.getAuthor().getUsername()))
         .andExpect(jsonPath("$.items[1].author.password").doesNotExist())
         .andExpect(
-            jsonPath("$.items[1].createdAt").value(expectedArticle1.getCreatedAt().toString()))
+            jsonPath("$.items[1].createdAt").value(
+                expectedArticle1.getCreatedAt().format(formatter)))
         .andExpect(
-            jsonPath("$.items[1].updatedAt").value(expectedArticle1.getUpdatedAt().toString()))
+            jsonPath("$.items[1].updatedAt").value(
+                expectedArticle1.getUpdatedAt().format(formatter)))
     ;
   }
 }
