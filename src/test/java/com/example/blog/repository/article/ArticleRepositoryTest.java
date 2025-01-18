@@ -144,7 +144,6 @@ class ArticleRepositoryTest {
    *
    * @throws Exception テスト実行中に例外が発生した場合
    */
-
   @Test
   @DisplayName("insert：記事データの作成に成功する")
   void insert_success() {
@@ -183,5 +182,36 @@ class ArticleRepositoryTest {
       assertThat(actualEntity.getCreatedAt()).isEqualTo(expectedEntity.getCreatedAt());
       assertThat(actualEntity.getUpdatedAt()).isEqualTo(expectedEntity.getUpdatedAt());
     });
+  }
+
+  /**
+   * selectAll メソッドがデータベースに記事が存在しない場合に空のリストを返すことを確認するテスト。
+   *
+   * <p>このテストでは、以下を確認します:</p>
+   * <ul>
+   *   <li>データベースが空の状態で selectAll メソッドを呼び出した場合、空のリストが返されること。</li>
+   *   <li>エラーが発生せず、正常にメソッドが動作すること。</li>
+   * </ul>
+   *
+   * <p>前提条件:</p>
+   * <ul>
+   *   <li>テスト開始時にテーブルが空である（{@code DELETE FROM articles;} を実行済み）。</li>
+   * </ul>
+   *
+   * @throws Exception テスト実行中に発生する例外
+   */
+  @Test
+  @DisplayName("selectAll：空のリストを返す")
+  @Sql(statements = {
+      "DELETE FROM articles;"
+  })
+  void selectAll_returnEmpty() {
+    // ## Arrange ## SQL でデータベースを初期化済み
+
+    // ## Act ##
+    var actual = cut.selectAll(); // データベースが空の状態で selectAll を実行
+
+    // ## Assert ##
+    assertThat(actual).isEmpty(); // 空のリストが返されることを確認
   }
 }
