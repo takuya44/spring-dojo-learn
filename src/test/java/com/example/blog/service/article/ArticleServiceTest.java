@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.jdbc.Sql;
 
 /**
  * {@link ArticleService} のテストクラス。
@@ -103,4 +104,34 @@ class ArticleServiceTest {
     assertThat(actual.getUpdatedAt()).isEqualTo(actual.getCreatedAt()); // 作成日時と更新日時が一致していることを確認
   }
 
+  /**
+   * 記事が存在しない場合の findAll メソッドの動作をテストします。
+   *
+   * <p>このテストでは、以下を確認します:</p>
+   * <ul>
+   *   <li>テーブルに記事データが存在しない場合、findAll メソッドが空のリストを返すこと。</li>
+   *   <li>エラーが発生せず、正常にメソッドが動作すること。</li>
+   * </ul>
+   *
+   * <p>前提条件:</p>
+   * <ul>
+   *   <li>テストの実行前に {@code DELETE FROM articles;} によってテーブルがクリアされている。</li>
+   * </ul>
+   *
+   * @throws Exception テスト実行中に発生する例外
+   */
+  @Test
+  @DisplayName("findAll: 記事が存在しないとき、空のリストが取得できる")
+  @Sql(statements = {
+      "DELETE FROM articles;"
+  })
+  void findAll_returnEmptyList() {
+    // ## Arrange ## SQlで実行済み
+
+    // ## Act ##
+    var actual = cut.findAll(); // 記事がない状態で findAll を呼び出す
+
+    // ## Assert ##
+    assertThat(actual).isEmpty(); // 空のリストが返されることを確認
+  }
 }
