@@ -134,4 +134,58 @@ class ArticleServiceTest {
     // ## Assert ##
     assertThat(actual).isEmpty(); // 空のリストが返されることを確認
   }
+
+  /**
+   * 記事が存在する場合の findAll メソッドの動作をテストします。
+   *
+   * <p>このテストでは、以下を確認します:</p>
+   * <ul>
+   *   <li>テーブルに複数の記事が存在する場合、findAll メソッドが正しい順序でそれらの記事を返すこと。</li>
+   *   <li>返されるリストのサイズが記事の件数と一致すること。</li>
+   *   <li>返される記事の内容が期待値と一致すること。</li>
+   * </ul>
+   *
+   * <p>前提条件:</p>
+   * <ul>
+   *   <li>テスト開始時にテーブルが空である（{@code DELETE FROM articles;} を実行済み）。</li>
+   *   <li>新規ユーザーを登録し、そのユーザーに紐づけて記事を作成する。</li>
+   * </ul>
+   *
+   * @throws Exception テスト実行中に発生する例外
+   */
+  @Test
+  @DisplayName("findAll: 記事が存在するとき、リストを返す")
+  @Sql(statements = {
+      "DELETE FROM articles;"
+  })
+  void findAll_returnMultipleArticle() {
+    // ## Arrange ##
+    // 固定された日時を使用
+    when(mockDateTimeService.now())
+        .thenReturn(TestDateTimeUtil.of(2022, 1, 1, 10, 10))
+        .thenReturn(TestDateTimeUtil.of(2022, 2, 2, 10, 20));
+
+    // ユーザーを作成
+    var user1 = new UserEntity();
+    user1.setUsername("test_username1");
+    user1.setPassword("test_password1");
+    user1.setEnabled(true);
+    userRepository.insert(user1); // ユーザーをデータベースに登録
+
+    // 記事を作成
+    var expectedArticle1 = cut.create(user1.getId(), "test_title1", "test_body1");
+    var expectedArticle2 = cut.create(user1.getId(), "test_title2", "test_body2");
+
+    // ## Act ##
+    // 記事をすべて取得
+    var actual = cut.findAll();
+
+    // ## Assert ##
+    // リストサイズを検証
+    assertThat(actual).hasSize(2);
+
+    // 記事の順序と内容を検証
+    assertThat(actual.get(0)).isEqualTo(expectedArticle2); // 新しい記事が先頭にくる
+    assertThat(actual.get(1)).isEqualTo(expectedArticle1);
+  }
 }
