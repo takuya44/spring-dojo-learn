@@ -4,10 +4,12 @@ import com.example.blog.api.ArticlesApi;
 import com.example.blog.model.ArticleDTO;
 import com.example.blog.model.ArticleForm;
 import com.example.blog.model.ArticleListDTO;
+import com.example.blog.model.ArticleListItemDTO;
 import com.example.blog.model.UserDTO;
 import com.example.blog.security.LoggedInUser;
 import com.example.blog.service.article.ArticleService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.BeanUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -115,11 +117,49 @@ public class ArticleRestController implements ArticlesApi {
         .body(body);
   }
 
+  /**
+   * 記事一覧を取得するエンドポイントの実装。
+   *
+   * <p>このメソッドは記事の一覧を取得し、各記事を DTO に変換してクライアントに返します。
+   * 記事ごとに著者情報も DTO に変換して含めます。</p>
+   *
+   * <p>処理の流れ:</p>
+   * <ol>
+   *   <li>サービス層から記事データを取得します。</li>
+   *   <li>各記事データを {@link ArticleListItemDTO} に変換します。</li>
+   *   <li>著者情報を {@link UserDTO} に変換し、記事DTOに設定します。</li>
+   *   <li>変換後の DTO を {@link ArticleListDTO} に格納して返却します。</li>
+   * </ol>
+   *
+   * @return 記事一覧を含む HTTP レスポンス
+   */
   @Override
   public ResponseEntity<ArticleListDTO> getArticleList() {
-    var entityList = articleService.findAll();
+    // 記事データを取得し、DTO に変換
+    var items = articleService.findAll()
+        .stream()
+        .map(entity -> {
+          // 記事データを ArticleListItemDTO に変換
+          var itemDto = new ArticleListItemDTO();
+          BeanUtils.copyProperties(entity, itemDto);
 
+          // 著者情報を UserDTO に変換
+          var userDto = new UserDTO();
+          BeanUtils.copyProperties(entity.getAuthor(), userDto);
+
+          // 記事DTOに著者情報を設定
+          itemDto.setAuthor(userDto);
+
+          return itemDto;
+        })
+        .toList();
+
+    // レスポンスボディを作成
+    var body = new ArticleListDTO();
+    body.setItems(items);
+
+    // HTTP レスポンスを返却
     return ResponseEntity
-        .ok(new ArticleListDTO());
+        .ok(body);
   }
 }
