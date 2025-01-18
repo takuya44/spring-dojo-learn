@@ -214,4 +214,71 @@ class ArticleRepositoryTest {
     // ## Assert ##
     assertThat(actual).isEmpty(); // 空のリストが返されることを確認
   }
+
+  /**
+   * selectAll メソッドが記事データを正しく返すことを確認するテスト。
+   *
+   * <p>このテストでは、以下を確認します:</p>
+   * <ul>
+   *   <li>データベースに複数の記事が存在する場合、findAll メソッドがそれらを正しい順序で返すこと。</li>
+   *   <li>返されるリストのサイズが期待通りであること。</li>
+   *   <li>記事データの内容が期待通りであること。</li>
+   *   <li>返される著者データにパスワードフィールドが含まれないこと。</li>
+   * </ul>
+   *
+   * <p>前提条件:</p>
+   * <ul>
+   *   <li>テーブルが初期化済み（{@code DELETE FROM articles;} を実行）。</li>
+   *   <li>テスト内でユーザーと記事を新規作成。</li>
+   * </ul>
+   *
+   * @throws Exception テスト実行中に発生する例外
+   */
+  @Test
+  @DisplayName("selectAll: 記事が存在するとき、リストを返す")
+  @Sql(statements = {
+      "DELETE FROM articles;"
+  })
+  void selectAll_returnMultipleArticle() {
+    // ## Arrange ##
+    // ユーザーを作成
+    var expectedUser = new UserEntity();
+    expectedUser.setUsername("test_username1");
+    expectedUser.setPassword("test_password1");
+    expectedUser.setEnabled(true);
+    userRepository.insert(expectedUser); // ユーザーをデータベースに登録
+
+    // 記事の作成日時を設定
+    var datetime1 = TestDateTimeUtil.of(2022, 1, 1, 10, 10);
+    var datetime2 = TestDateTimeUtil.of(2022, 2, 1, 10, 20);
+
+    // 記事を作成
+    var expectedArticle1 = new ArticleEntity(null, "test_title1", "test_body1", expectedUser,
+        datetime1,
+        datetime1);
+    var expectedArticle2 = new ArticleEntity(null, "test_title2", "test_body2", expectedUser,
+        datetime2,
+        datetime2);
+    cut.insert(expectedArticle1);
+    cut.insert(expectedArticle2);
+
+    // ## Act ##
+    // 記事をすべて取得
+    var actual = cut.selectAll();
+
+    // ## Assert ##
+    // リストサイズを検証
+    assertThat(actual).hasSize(2);
+
+    // 記事の順序と内容を検証
+    assertThat(actual.get(0))
+        .usingRecursiveComparison()
+        .ignoringFields("author.password")// パスワードフィールドを無視
+        .isEqualTo(expectedArticle2); // 新しい記事が先頭にくる
+
+    assertThat(actual.get(1))
+        .usingRecursiveComparison()
+        .ignoringFields("author.password")
+        .isEqualTo(expectedArticle1);
+  }
 }
