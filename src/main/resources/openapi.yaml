@@ -167,6 +167,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ArticleListDTO"
+        '500':
+          $ref: "#/components/responses/InternalServerErrorResponse"
 components:
   schemas:
     InternalServerError:
