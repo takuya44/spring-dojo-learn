@@ -133,4 +133,47 @@ class ArticleRestControllerGetArticleTest {
     ;
 
   }
+
+  /**
+   * GET /articles/{articleId}: 指定された記事IDが存在しない場合の動作をテストします。
+   *
+   * <p>このテストでは、以下を確認します:</p>
+   * <ul>
+   *   <li>存在しない記事IDを指定した場合、エンドポイントが 404 Not Found を返すこと。</li>
+   *   <li>レスポンスヘッダーに正しい Content-Type が含まれること。</li>
+   *   <li>レスポンスボディに適切なエラーメッセージが含まれること。</li>
+   *   <li>レスポンスにリクエストパスがインスタンス情報として含まれること。</li>
+   * </ul>
+   *
+   * <p>前提条件:</p>
+   * <ul>
+   *   <li>データベースに 3 件の記事データが存在する。</li>
+   *   <li>指定する記事ID（{@code 0}）は有効な記事IDではない。</li>
+   * </ul>
+   *
+   * @throws Exception テスト実行中の例外
+   */
+  @Test
+  @DisplayName("GET /articles/{articleId}: 指定された記事のIDが存在しないとき 404 を返す")
+  void getArticle_404() throws Exception {
+    // ## Arrange ## 前提：DBに３件データある
+    var invalidArticleId = 0;
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        get("/articles/{articleId}", invalidArticleId)
+            .contentType(MediaType.APPLICATION_JSON)
+    );
+
+    // ## Assert ##
+    actual
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Not Found"))
+        .andExpect(jsonPath("$.status").value(404))
+        .andExpect(jsonPath("$.detail").value("リソースが見つかりません"))
+        .andExpect(jsonPath("$.instance").value("/articles/" + invalidArticleId))
+    ;
+
+  }
 }
