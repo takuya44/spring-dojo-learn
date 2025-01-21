@@ -169,7 +169,7 @@ class ArticleRestControllerGetArticleTest {
     actual
         .andExpect(status().isNotFound())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
-        .andExpect(jsonPath("$.title").value("Not Found"))
+        .andExpect(jsonPath("$.title").value("NotFound"))
         .andExpect(jsonPath("$.status").value(404))
         .andExpect(jsonPath("$.detail").value("リソースが見つかりません"))
         .andExpect(jsonPath("$.instance").value("/articles/" + invalidArticleId))

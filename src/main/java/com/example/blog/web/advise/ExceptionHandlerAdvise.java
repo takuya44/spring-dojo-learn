@@ -3,12 +3,16 @@ package com.example.blog.web.advise;
 import com.example.blog.model.BadRequest;
 import com.example.blog.model.ErrorDetail;
 import com.example.blog.model.InternalServerError;
+import com.example.blog.model.NotFound;
 import com.example.blog.web.exception.ResourceNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import java.net.URI;
 import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -112,17 +116,33 @@ public class ExceptionHandlerAdvise {
    * カスタム例外 {@link ResourceNotFoundException} が発生した場合のハンドリングを行うメソッド。
    *
    * <p>このメソッドは、指定されたリソースが存在しない場合にスローされる {@link ResourceNotFoundException} をキャッチし、
-   * クライアントに 404 Not Found ステータスコードを返します。</p>
+   * クライアントに 404 Not Found ステータスコードを適切なエラーレスポンスと共に返します。</p>
    *
-   * <p>{@link ExceptionHandler} アノテーションを使用して、例外発生時にこのメソッドが呼び出されます。</p>
+   * <p>処理の概要:</p>
+   * <ul>
+   *   <li>{@link ExceptionHandler} アノテーションにより、このメソッドが例外発生時に自動的に呼び出されます。</li>
+   *   <li>HTTP ステータスコード 404 (Not Found) を設定します。</li>
+   *   <li>レスポンスの Content-Type を {@code application/problem+json} に設定します。</li>
+   *   <li>{@link NotFound} クラスを使用して、エラーメッセージと発生元のリクエスト URI をレスポンスに含めます。</li>
+   * </ul>
    *
-   * @param e 発生した {@link ResourceNotFoundException} のインスタンス
-   * @return 404 Not Found のレスポンスを返します
+   * @param e       発生した {@link ResourceNotFoundException} のインスタンス
+   * @param request 現在の HTTP リクエスト情報
+   * @return 404 Not Found のエラーレスポンス
    */
   @ExceptionHandler(ResourceNotFoundException.class)
-  public ResponseEntity<Void> handleResourceNotFoundException(ResourceNotFoundException e) {
+  public ResponseEntity<NotFound> handleResourceNotFoundException(
+      ResourceNotFoundException e,
+      HttpServletRequest request
+  ) {
     // リソースが見つからない場合に404ステータスコードを返す
-    return ResponseEntity.notFound().build();
+    return ResponseEntity
+        .status(HttpStatus.NOT_FOUND)
+        .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+        .body(new NotFound()
+            .detail("リソースが見つかりません") // エラーメッセージ
+            .instance(URI.create(request.getRequestURI())) // 発生元のリクエスト URI
+        );
   }
 
 }

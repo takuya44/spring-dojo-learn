@@ -8,6 +8,7 @@ import com.example.blog.model.ArticleListItemDTO;
 import com.example.blog.model.UserDTO;
 import com.example.blog.security.LoggedInUser;
 import com.example.blog.service.article.ArticleService;
+import com.example.blog.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.MediaType;
@@ -166,37 +167,41 @@ public class ArticleRestController implements ArticlesApi {
   /**
    * 指定された記事IDに基づいて記事の詳細を取得するエンドポイント。
    *
-   * <p>このメソッドでは、サービス層から記事を取得し、DTO に変換してクライアントに返します。</p>
+   * <p>このメソッドでは、記事データをサービス層から取得し、DTO に変換してクライアントに返却します。</p>
    *
    * <p>処理の流れ:</p>
    * <ol>
-   *   <li>サービス層の {@code findById} メソッドを使用して記事を取得。</li>
-   *   <li>取得した記事オブジェクトを {@link ArticleDTO} に変換。</li>
-   *   <li>著者情報を {@link UserDTO} に変換し、記事DTOに設定。</li>
-   *   <li>記事DTOをレスポンスボディとして返却。</li>
+   *   <li>サービス層の {@code findById} メソッドを呼び出し、指定された記事IDで記事を検索。</li>
+   *   <li>記事が見つかった場合:
+   *     <ul>
+   *       <li>著者情報を {@link UserDTO} に変換。</li>
+   *       <li>記事情報を {@link ArticleDTO} に変換。</li>
+   *       <li>変換した DTO を HTTP 200 OK レスポンスとして返却。</li>
+   *     </ul>
+   *   </li>
+   *   <li>記事が見つからなかった場合、{@link ResourceNotFoundException} をスロー。</li>
    * </ol>
-   *
-   * <p><strong>注意:</strong> 現在、{@code Optional#get()} を使用していますが、これは非推奨です。
-   * データが存在しない場合に例外がスローされるため、安全な方法に置き換える必要があります。</p>
    *
    * @param articleId 取得する記事のID
    * @return 指定された記事の詳細を含む HTTP レスポンス
+   * @throws ResourceNotFoundException 指定された記事IDに対応する記事が存在しない場合
    */
   @Override
   public ResponseEntity<ArticleDTO> getArticle(Long articleId) {
-    // 記事を取得 (現在は Optional#get() を使用)
-    var article = articleService.findById(articleId).get(); // TODO getよくない
+    return articleService.findById(articleId)
+        .map(entity -> {
+          // 著者情報を DTO に変換
+          var userDto = new UserDTO();
+          BeanUtils.copyProperties(entity.getAuthor(), userDto);
 
-    // 著者情報を DTO に変換
-    var userDto = new UserDTO();
-    BeanUtils.copyProperties(article.getAuthor(), userDto);
+          // 記事データを DTO に変換
+          var body = new ArticleDTO();
+          BeanUtils.copyProperties(entity, body);
+          body.setAuthor(userDto);
 
-    // 記事データを DTO に変換
-    var body = new ArticleDTO();
-    BeanUtils.copyProperties(article, body);
-    body.setAuthor(userDto);
-
-    // レスポンスを返却
-    return ResponseEntity.ok(body);
+          // レスポンスを返却
+          return ResponseEntity.ok(body);
+        })
+        .orElseThrow(ResourceNotFoundException::new); // 記事が見つからない場合に例外をスロー
   }
 }
