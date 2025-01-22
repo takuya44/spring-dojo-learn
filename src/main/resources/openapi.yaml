@@ -196,13 +196,10 @@ paths:
           $ref: "#/components/responses/InternalServerErrorResponse"
 components:
   schemas:
+    # 500エラー
     InternalServerError:
       type: object
       properties:
-        type:
-          type: string
-          format: uri
-          default: "about:blank"
         title:
           type: string
           default: "Internal Server Error"
@@ -216,7 +213,6 @@ components:
         instance:
           type: string
           format: uri
-          default: null
     ErrorDetail:
       description: BadRequest エラーが発生したときのエラーの詳細
       properties:

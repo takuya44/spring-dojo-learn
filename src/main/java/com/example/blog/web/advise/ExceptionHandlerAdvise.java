@@ -94,22 +94,38 @@ public class ExceptionHandlerAdvise {
   }
 
   /**
-   * RuntimeException をキャッチし、500 Internal Server Error のレスポンスを返す。
+   * RuntimeException をキャッチし、500 Internal Server Error のレスポンスを返す例外ハンドラ。
    *
-   * <p>
-   * このメソッドは、コントローラーで発生した {@link RuntimeException} を処理し、 クライアントにカスタマイズされたエラーメッセージを返します。
-   * </p>
+   * <p>このメソッドは、コントローラー内で発生した予期しない {@link RuntimeException} を処理し、
+   * クライアントに適切なエラーレスポンスを提供します。</p>
    *
-   * @param e 捕捉されたランタイム例外
+   * <p>処理の流れ:</p>
+   * <ul>
+   *   <li>{@link ExceptionHandler} アノテーションにより、{@link RuntimeException} 発生時にこのメソッドが呼び出されます。</li>
+   *   <li>HTTP ステータスコード 500 (Internal Server Error) を設定します。</li>
+   *   <li>レスポンスの Content-Type を {@code application/problem+json} に設定します。</li>
+   *   <li>{@link InternalServerError} オブジェクトを使用して、エラーの詳細情報をレスポンスに含めます。</li>
+   *   <li>エラーの発生元 URI をレスポンスに設定します。</li>
+   * </ul>
+   *
+   * <p>この例外ハンドラにより、システム内部の詳細（スタックトレースなど）がクライアントに露出しないようにします。</p>
+   *
+   * @param e       捕捉されたランタイム例外
+   * @param request 現在の HTTP リクエスト情報
    * @return 500 Internal Server Error のレスポンスと共に、カスタムエラーメッセージを返す
    */
   @ExceptionHandler(RuntimeException.class)
-  public ResponseEntity<InternalServerError> handleRuntimeException(RuntimeException e) {
+  public ResponseEntity<InternalServerError> handleRuntimeException(
+      RuntimeException e,
+      HttpServletRequest request
+  ) {
     // 500ステータスコードと、application/problem+json のコンテンツタイプを設定してレスポンスを返す
     return ResponseEntity
         .internalServerError() // HTTP 500 ステータスコードを返す
         .contentType(MediaType.APPLICATION_PROBLEM_JSON) // application/problem+json コンテンツタイプを設定
-        .body(new InternalServerError()); // エラーオブジェクトをレスポンスのボディとして返す
+        .body(new InternalServerError()
+            .instance(URI.create(request.getRequestURI()))// 発生元のリクエスト URI
+        ); // エラーオブジェクトをレスポンスのボディとして返す
   }
 
   /**
