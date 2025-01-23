@@ -127,6 +127,8 @@ paths:
       description: body と title を指定して記事を作成します。ログインが必要。
       security:
         - cookieAuth: [ ]
+        - csrfProtectionHeader: [ ]
+        - csrfProtectionCookie: [ ]
       requestBody:
         content:
           application/json:
@@ -190,6 +192,45 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ArticleDTO"
+        '404':
+          $ref: "#/components/responses/NotFoundResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerErrorResponse"
+    put:
+      tags: [ articles ]
+      summary: 記事を更新します
+      description: 記事を更新します
+      operationId: updateArticle
+      parameters:
+        - name: articleId
+          in: path
+          description: 記事のID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      security:
+        - cookieAuth: [ ]
+        - csrfProtectionHeader: [ ]
+        - csrfProtectionCookie: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleForm"
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleDTO"
+        '400':
+          $ref: "#/components/responses/BadRequestResponse"
+        '401':
+          $ref: "#/components/responses/UnauthorizedResponse"
+        '403':
+          $ref: "#/components/responses/ForbiddenResponse"
         '404':
           $ref: "#/components/responses/NotFoundResponse"
         '500':
