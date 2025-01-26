@@ -4,7 +4,6 @@ import com.example.blog.repository.article.ArticleRepository;
 import com.example.blog.service.DateTimeService;
 import com.example.blog.service.user.UserEntity;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -87,44 +86,48 @@ public class ArticleService {
    * 指定された記事を更新するサービスメソッド。
    *
    * <p>このメソッドでは、指定された記事IDとユーザーIDを基に、記事のタイトル、本文、更新日時を更新します。
-   * 更新後、最新のエンティティオブジェクトを返却します。</p>
+   * 更新が成功すると、更新された記事のエンティティを返します。</p>
    *
    * <p>処理の流れ:</p>
    * <ol>
-   *   <li>記事IDを基にデータベースから記事を検索。</li>
-   *   <li>該当する記事が存在しない場合は例外をスロー。</li>
-   *   <li>記事データ（タイトル、本文、更新日時）を更新。</li>
-   *   <li>更新内容をリポジトリを通じてデータベースに保存。</li>
-   *   <li>更新されたエンティティを返却。</li>
+   *   <li>記事IDを基に記事を検索します。</li>
+   *   <li>該当する記事が存在する場合:
+   *     <ul>
+   *       <li>タイトル、本文、更新日時を新しい値で更新します。</li>
+   *       <li>リポジトリを通じてデータベースに変更を保存します。</li>
+   *       <li>更新後のエンティティを返します。</li>
+   *     </ul>
+   *   </li>
+   *   <li>該当する記事が存在しない場合、空の {@code Optional} を返します。</li>
    * </ol>
+   *
+   * <p>このメソッドはトランザクション内で実行されるため、データベース操作がすべて成功した場合にのみ変更がコミットされます。</p>
    *
    * @param articleId    更新する記事のID
    * @param userId       更新をリクエストしたユーザーのID
    * @param updatedTitle 更新後のタイトル
    * @param updatedBody  更新後の本文
-   * @return 更新された記事エンティティ
-   * @throws NoSuchElementException 指定された記事が見つからない場合
+   * @return 更新された記事のエンティティが含まれる {@code Optional}。該当する記事が存在しない場合は空の {@code Optional} を返す
    */
   @Transactional
-  public ArticleEntity update(
+  public Optional<ArticleEntity> update(
       long articleId,
       long userId,
       String updatedTitle,
       String updatedBody
   ) {
-    // 記事を検索 (存在しない場合は例外をスロー)
-    var entity = findById(articleId).orElseThrow();
+    return findById(articleId)
+        .map(entity -> {
+          // 記事データを更新
+          entity.setTitle(updatedTitle);
+          entity.setBody(updatedBody);
+          entity.setUpdatedAt(dateTimeService.now()); // 現在日時を設定
 
-    // 記事データを更新
-    entity.setTitle(updatedTitle);
-    entity.setBody(updatedBody);
-    // 更新日時を現在の日時に設定
-    entity.setUpdatedAt(dateTimeService.now());// greaterThan 条件を通すため
-// 更新内容をデータベースに保存
+          // 更新内容をリポジトリを通じて保存
+          articleRepository.update(entity);
 
-    articleRepository.update(entity);
-
-    // 更新されたエンティティを返却
-    return entity;
+          // 更新後のエンティティを返却
+          return entity;
+        });
   }
 }

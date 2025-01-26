@@ -208,20 +208,30 @@ public class ArticleRestController implements ArticlesApi {
   /**
    * 指定された記事を更新するエンドポイント。
    *
-   * <p>このメソッドでは、認証されたユーザーの情報を基に、指定された記事を更新し、
-   * 更新された記事データをクライアントに返します。</p>
+   * <p>このメソッドは、認証されたユーザーの情報を基に、指定された記事を更新します。
+   * 更新された記事データを DTO に変換し、HTTP レスポンスとして返します。</p>
    *
    * <p>処理の流れ:</p>
    * <ol>
    *   <li>セキュリティコンテキストから現在ログイン中のユーザー情報を取得。</li>
-   *   <li>サービス層の {@code update} メソッドを使用して記事を更新。</li>
-   *   <li>更新された記事データを DTO に変換。</li>
-   *   <li>変換された DTO を HTTP 200 OK レスポンスとして返却。</li>
+   *   <li>サービス層の {@code update} メソッドを呼び出して記事を更新。</li>
+   *   <li>更新が成功した場合:
+   *     <ul>
+   *       <li>更新された記事データを DTO に変換。</li>
+   *       <li>HTTP ステータスコード 200 OK のレスポンスとして返却。</li>
+   *     </ul>
+   *   </li>
+   *   <li>更新対象の記事が存在しない場合:
+   *     <ul>
+   *       <li>{@link ResourceNotFoundException} をスローし、HTTP ステータスコード 404 Not Found を返す。</li>
+   *     </ul>
+   *   </li>
    * </ol>
    *
    * @param articleId 更新する記事のID
    * @param form      更新内容を含むリクエストボディ
-   * @return 更新された記事の詳細を含む HTTP レスポンス
+   * @return 更新された記事データを含む HTTP レスポンス
+   * @throws ResourceNotFoundException 指定された記事が見つからない場合
    */
   @Override
   public ResponseEntity<ArticleDTO> updateArticle(
@@ -235,24 +245,26 @@ public class ArticleRestController implements ArticlesApi {
         .getPrincipal(); // 現在ログインしているユーザーの情報を取得
 
     // ## 2. 指定された記事を更新 ##
-    var updatedEntity = articleService.update(
-        articleId,
-        loggedInUser.getUserId(),
-        form.getTitle(),
-        form.getBody()
-    );
+    return articleService.update(
+            articleId,
+            loggedInUser.getUserId(),
+            form.getTitle(),
+            form.getBody()
+        )
+        .map(updatedEntity -> {
+          // ユーザー情報をDTOオブジェクトに変換
+          var userDTO = new UserDTO();
+          BeanUtils.copyProperties(updatedEntity.getAuthor(), userDTO);
 
-    // ユーザー情報をDTOオブジェクトに変換
-    var userDTO = new UserDTO();
-    BeanUtils.copyProperties(updatedEntity.getAuthor(), userDTO);
+          // 記事データを DTO に変換
+          var body = new ArticleDTO();
+          BeanUtils.copyProperties(updatedEntity, body);
+          body.setAuthor(userDTO);
 
-    // 記事データを DTO に変換
-    var body = new ArticleDTO();
-    BeanUtils.copyProperties(updatedEntity, body);
-    body.setAuthor(userDTO);
-
-    // ## 3. HTTP レスポンスを返す ##
-    return ResponseEntity
-        .ok(body);
+          // ## 3. HTTP レスポンスを返す ##
+          return ResponseEntity
+              .ok(body);
+        })
+        .orElseThrow(ResourceNotFoundException::new);
   }
 }
