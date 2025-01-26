@@ -4,6 +4,7 @@ import com.example.blog.repository.article.ArticleRepository;
 import com.example.blog.service.DateTimeService;
 import com.example.blog.service.user.UserEntity;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -80,5 +81,50 @@ public class ArticleService {
 
   public List<ArticleEntity> findAll() {
     return articleRepository.selectAll();
+  }
+
+  /**
+   * 指定された記事を更新するサービスメソッド。
+   *
+   * <p>このメソッドでは、指定された記事IDとユーザーIDを基に、記事のタイトルと本文を更新し、
+   * 更新日時を現在の日時に変更します。</p>
+   *
+   * <p>処理の流れ:</p>
+   * <ol>
+   *   <li>{@code findById} メソッドを使用して記事を検索。</li>
+   *   <li>記事が存在しない場合は例外をスロー。</li>
+   *   <li>指定されたタイトルと本文で記事を更新。</li>
+   *   <li>現在日時を {@code updatedAt} フィールドに設定。</li>
+   *   <li>更新されたエンティティを返却。</li>
+   * </ol>
+   *
+   * <p><strong>注意:</strong> 現在はモック実装であり、データベースへの変更が反映されない場合があります。</p>
+   *
+   * @param articleId    更新する記事のID
+   * @param userId       更新をリクエストしたユーザーのID
+   * @param updatedTitle 更新後のタイトル
+   * @param updatedBody  更新後の本文
+   * @return 更新された記事エンティティ
+   * @throws NoSuchElementException 指定された記事が見つからない場合
+   */
+  @Transactional
+  public ArticleEntity update(
+      long articleId,
+      long userId,
+      String updatedTitle,
+      String updatedBody
+  ) {
+    // TODO mock impl
+    var currentEntity = findById(articleId).orElseThrow();
+
+    // 記事データを更新
+    currentEntity.setTitle(updatedTitle);
+    currentEntity.setBody(updatedBody);
+
+    // 更新日時を現在の日時に設定
+    currentEntity.setUpdatedAt(dateTimeService.now());// greaterThan 条件を通すため
+
+    // 更新されたエンティティを返却
+    return currentEntity;
   }
 }

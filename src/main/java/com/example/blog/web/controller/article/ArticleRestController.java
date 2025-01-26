@@ -204,4 +204,55 @@ public class ArticleRestController implements ArticlesApi {
         })
         .orElseThrow(ResourceNotFoundException::new); // 記事が見つからない場合に例外をスロー
   }
+
+  /**
+   * 指定された記事を更新するエンドポイント。
+   *
+   * <p>このメソッドでは、認証されたユーザーの情報を基に、指定された記事を更新し、
+   * 更新された記事データをクライアントに返します。</p>
+   *
+   * <p>処理の流れ:</p>
+   * <ol>
+   *   <li>セキュリティコンテキストから現在ログイン中のユーザー情報を取得。</li>
+   *   <li>サービス層の {@code update} メソッドを使用して記事を更新。</li>
+   *   <li>更新された記事データを DTO に変換。</li>
+   *   <li>変換された DTO を HTTP 200 OK レスポンスとして返却。</li>
+   * </ol>
+   *
+   * @param articleId 更新する記事のID
+   * @param form      更新内容を含むリクエストボディ
+   * @return 更新された記事の詳細を含む HTTP レスポンス
+   */
+  @Override
+  public ResponseEntity<ArticleDTO> updateArticle(
+      Long articleId,
+      ArticleForm form
+  ) {
+    // ## 1. 認証情報から現在ログインしているユーザー情報を取得 ##
+    var loggedInUser = (LoggedInUser) SecurityContextHolder
+        .getContext() // セキュリティコンテキストを取得
+        .getAuthentication() // 認証情報を取得
+        .getPrincipal(); // 現在ログインしているユーザーの情報を取得
+
+    // ## 2. 指定された記事を更新 ##
+    var updatedEntity = articleService.update(
+        articleId,
+        loggedInUser.getUserId(),
+        form.getTitle(),
+        form.getBody()
+    );
+
+    // ユーザー情報をDTOオブジェクトに変換
+    var userDTO = new UserDTO();
+    BeanUtils.copyProperties(updatedEntity.getAuthor(), userDTO);
+
+    // 記事データを DTO に変換
+    var body = new ArticleDTO();
+    BeanUtils.copyProperties(updatedEntity, body);
+    body.setAuthor(userDTO);
+
+    // ## 3. HTTP レスポンスを返す ##
+    return ResponseEntity
+        .ok(body);
+  }
 }

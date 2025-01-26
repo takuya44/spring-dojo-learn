@@ -80,7 +80,7 @@ class ArticleRestControllerUpdateArticleTest {
    */
   @Test
   @DisplayName("PUT /articles/{articleId}: 記事の編集に成功する")
-  void createArticle_success() throws Exception {
+  void updateArticle_200() throws Exception {
     // ## Arrange ##
     // テストで使用するユーザー情報を作成: ログイン済みユーザーを模倣
     var newUser = userService.register("test_username", "test_password");
