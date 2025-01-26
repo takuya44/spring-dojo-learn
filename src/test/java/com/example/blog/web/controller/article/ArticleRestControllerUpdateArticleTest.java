@@ -121,4 +121,67 @@ class ArticleRestControllerUpdateArticleTest {
     ;
   }
 
+  /**
+   * PUT /articles/{articleId}: 指定された記事IDが存在しない場合の動作をテストするメソッド。
+   *
+   * <p>このテストでは、以下を確認します:</p>
+   * <ul>
+   *   <li>存在しない記事IDを指定した場合、エンドポイントが 404 Not Found を返すこと。</li>
+   *   <li>レスポンスヘッダーに正しい Content-Type（application/problem+json）が設定されること。</li>
+   *   <li>レスポンスボディに適切なエラーメッセージが含まれること。</li>
+   *   <li>エラーレスポンスの形式が RFC 7807 に準拠していること。</li>
+   * </ul>
+   *
+   * <p>処理の流れ:</p>
+   * <ol>
+   *   <li>ユーザーを登録し、認証情報を作成。</li>
+   *   <li>更新対象の記事IDとして存在しないID（{@code 0}）を設定。</li>
+   *   <li>PUT リクエストを送信してレスポンスを取得。</li>
+   *   <li>レスポンスのステータスコード、ヘッダー、ボディを検証。</li>
+   * </ol>
+   *
+   * <p>前提条件:</p>
+   * <ul>
+   *   <li>データベースに3件のデータが存在する。</li>
+   *   <li>指定された記事IDは存在しない（無効なIDとして {@code 0} を使用）。</li>
+   * </ul>
+   *
+   * @throws Exception テスト実行中の例外
+   */
+  @Test
+  @DisplayName("PUT /articles/{articleId}: 指定されたIDの記事が存在しないとき、404を返す")
+  void updateArticle_404NotFound() throws Exception {
+    // ## Arrange ## 前提：DBに３件データある
+    var invalidArticleId = 0;
+    var newUser = userService.register("test_username", "test_password");
+    var expectedUser = new LoggedInUser(newUser.getId(), newUser.getUsername(),
+        newUser.getPassword(), true);
+
+    // JSON形式のリクエストボディを準備
+    var bodyJson = """
+        {
+          "title": "test_title_update",
+          "body": "test_body_updated"
+        }
+        """;
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        put("/articles/{articleId}", invalidArticleId)
+            .with(csrf())
+            .with(user(expectedUser)) // 認証されたユーザーを設定
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(bodyJson)
+    );
+
+    // ## Assert ##
+    actual
+        .andExpect(status().isNotFound()) // ステータスコードが 404 であることを確認
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("NotFound"))
+        .andExpect(jsonPath("$.status").value(404))
+        .andExpect(jsonPath("$.detail").value("リソースが見つかりません"))
+        .andExpect(jsonPath("$.instance").value("/articles/" + invalidArticleId))
+    ;
+  }
 }
