@@ -10,6 +10,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Result;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
 
 /**
  * 記事データを管理する MyBatis のリポジトリインターフェース。
@@ -104,4 +105,29 @@ public interface ArticleRepository {
   void insert(ArticleEntity newArticle);
 
 
+  /**
+   * 指定された記事を更新するための SQL クエリ。
+   *
+   * <p>このメソッドは、記事IDと作成者のユーザーIDに基づいて記事を検索し、
+   * 該当する記事のタイトル、本文、および更新日時を変更します。</p>
+   *
+   * <p>処理の流れ:</p>
+   * <ul>
+   *   <li>指定された記事ID（`id`）と作成者のユーザーID（`author.id`）に一致するレコードを検索。</li>
+   *   <li>該当するレコードが存在する場合、そのタイトル（`title`）、本文（`body`）、および更新日時（`updatedAt`）を変更。</li>
+   *   <li>該当するレコードが存在しない場合は何も更新されない。</li>
+   * </ul>
+   *
+   * @param entity 更新する記事データを格納した {@link ArticleEntity} オブジェクト
+   */
+  @Update("""
+      UPDATE articles
+      SET
+          title      = #{title}
+        , body       = #{body}
+        , updated_at = #{updatedAt}
+      WHERE id       = #{id}
+        AND user_id  = #{author.id}
+      """)
+  void update(ArticleEntity entity);
 }
