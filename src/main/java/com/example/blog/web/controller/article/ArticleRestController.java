@@ -10,7 +10,6 @@ import com.example.blog.security.LoggedInUser;
 import com.example.blog.service.article.ArticleService;
 import com.example.blog.web.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.BeanUtils;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -92,19 +91,8 @@ public class ArticleRestController implements ArticlesApi {
         form.getBody()
     );
 
-    // ユーザー情報をDTOオブジェクトに変換
-    var userDTO = new UserDTO();
-    userDTO.setId(newArticle.getAuthor().getId());
-    userDTO.setUsername(newArticle.getAuthor().getUsername());
-
     // 記事データを DTO に変換
-    var body = new ArticleDTO();
-    body.setId(newArticle.getId());
-    body.setTitle(newArticle.getTitle());
-    body.setBody(newArticle.getBody());
-    body.setAuthor(userDTO);
-    body.setCreatedAt(newArticle.getCreatedAt());
-    body.setUpdatedAt(newArticle.getUpdatedAt());
+    var body = ArticleMapper.toArticleDTO(newArticle);
 
     // ## 3. Location ヘッダーにリソース URI を設定 ##
     var location = UriComponentsBuilder.fromPath("/articles/{id}")
@@ -139,20 +127,7 @@ public class ArticleRestController implements ArticlesApi {
     // 記事データを取得し、DTO に変換
     var items = articleService.findAll()
         .stream()
-        .map(entity -> {
-          // 記事データを ArticleListItemDTO に変換
-          var itemDto = new ArticleListItemDTO();
-          BeanUtils.copyProperties(entity, itemDto);
-
-          // 著者情報を UserDTO に変換
-          var userDto = new UserDTO();
-          BeanUtils.copyProperties(entity.getAuthor(), userDto);
-
-          // 記事DTOに著者情報を設定
-          itemDto.setAuthor(userDto);
-
-          return itemDto;
-        })
+        .map(ArticleMapper::toArticleListItemDTO)
         .toList();
 
     // レスポンスボディを作成
@@ -189,20 +164,9 @@ public class ArticleRestController implements ArticlesApi {
   @Override
   public ResponseEntity<ArticleDTO> getArticle(Long articleId) {
     return articleService.findById(articleId)
-        .map(entity -> {
-          // 著者情報を DTO に変換
-          var userDto = new UserDTO();
-          BeanUtils.copyProperties(entity.getAuthor(), userDto);
-
-          // 記事データを DTO に変換
-          var body = new ArticleDTO();
-          BeanUtils.copyProperties(entity, body);
-          body.setAuthor(userDto);
-
-          // レスポンスを返却
-          return ResponseEntity.ok(body);
-        })
-        .orElseThrow(ResourceNotFoundException::new); // 記事が見つからない場合に例外をスロー
+        .map(ArticleMapper::toArticleDTO)
+        .map(ResponseEntity::ok)
+        .orElseThrow(ResourceNotFoundException::new);
   }
 
   /**
