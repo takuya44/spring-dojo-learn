@@ -251,20 +251,8 @@ public class ArticleRestController implements ArticlesApi {
             form.getTitle(),
             form.getBody()
         )
-        .map(updatedEntity -> {
-          // ユーザー情報をDTOオブジェクトに変換
-          var userDTO = new UserDTO();
-          BeanUtils.copyProperties(updatedEntity.getAuthor(), userDTO);
-
-          // 記事データを DTO に変換
-          var body = new ArticleDTO();
-          BeanUtils.copyProperties(updatedEntity, body);
-          body.setAuthor(userDTO);
-
-          // ## 3. HTTP レスポンスを返す ##
-          return ResponseEntity
-              .ok(body);
-        })
+        .map(ArticleMapper::toArticleDTO)
+        .map(ResponseEntity::ok)
         .orElseThrow(ResourceNotFoundException::new);
   }
 }
