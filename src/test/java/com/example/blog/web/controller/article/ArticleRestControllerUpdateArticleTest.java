@@ -227,4 +227,71 @@ class ArticleRestControllerUpdateArticleTest {
         .andExpect(jsonPath("$.instance").value("/articles/" + invalidArticleId))
     ;
   }
+
+  /**
+   * PUT /articles/{articleId}: 自分が作成していない記事を編集しようとした場合の動作をテストする。
+   *
+   * <p>このテストでは、以下を確認します:</p>
+   * <ul>
+   *   <li>他のユーザーが作成した記事を編集しようとした場合、403 Forbidden ステータスコードが返されること。</li>
+   *   <li>レスポンスヘッダーに正しい Content-Type（application/problem+json）が設定されていること。</li>
+   *   <li>レスポンスボディに適切なエラーメッセージが含まれること。</li>
+   * </ul>
+   *
+   * <p>処理の流れ:</p>
+   * <ol>
+   *   <li>記事作成者となるユーザー（creator）を登録し、そのユーザーが記事を作成。</li>
+   *   <li>別のログインユーザー（otherUser）を登録。</li>
+   *   <li>別のログインユーザーが記事を編集しようとした場合、403 Forbidden が返されることを検証。</li>
+   * </ol>
+   *
+   * <p>エラーメッセージは、RFC 7807 に準拠したフォーマットであることを確認します。</p>
+   *
+   * @throws Exception テスト実行中の例外
+   */
+  @Test
+  @DisplayName("PUT /articles/{articleId}: 自分が作成した記事以外の記事を編集しようとしたとき、403を返す")
+  void updateArticle_403Forbidden_userId() throws Exception {
+    // ## Arrange ##
+    // 日付を固定：この値がDBに登録される（今回のテストでは日時の検証は行わない）
+    when(mockDateTimeService.now())
+        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20))
+        .thenReturn(TestDateTimeUtil.of(2022, 2, 2, 20, 30));
+
+    // 記事作成者（creator）を登録し、記事を作成
+    var creator = userService.register("test_username1", "test_password1");
+    var existingArticle = articleService.create(creator.getId(), "test_title", "test_body");
+
+    // 別のログインユーザー（otherUser）を登録
+    var otherUser = userService.register("test_username2", "test_password2");
+    var loggedInOtherUser = new LoggedInUser(otherUser.getId(), otherUser.getUsername(),
+        otherUser.getPassword(), true);
+
+    // JSON形式のリクエストボディを準備
+    var bodyJson = """
+        {
+          "title": "test_title_updated",
+          "body": "%test_body_updated"
+        }
+        """;
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        put("/articles/{articleId}", existingArticle.getId())
+            .with(csrf()) // CSRF トークンを追加
+            .with(user(loggedInOtherUser)) // 別のログインユーザーを設定
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(bodyJson)
+    );
+
+    // ## Assert ##
+    actual
+        .andExpect(status().isForbidden()) // ステータスコードが 403 であることを確認
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Forbidden"))
+        .andExpect(jsonPath("$.status").value(403))
+        .andExpect(jsonPath("$.detail").value("リソースへのアクセスが拒否されました"))
+        .andExpect(jsonPath("$.instance").value("/articles/" + existingArticle.getId()))
+    ;
+  }
 }
