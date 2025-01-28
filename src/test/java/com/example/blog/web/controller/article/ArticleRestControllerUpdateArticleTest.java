@@ -2,6 +2,7 @@ package com.example.blog.web.controller.article;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -10,13 +11,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.blog.security.LoggedInUser;
+import com.example.blog.service.DateTimeService;
 import com.example.blog.service.article.ArticleService;
 import com.example.blog.service.user.UserService;
+import com.example.blog.util.TestDateTimeUtil;
+import java.time.format.DateTimeFormatter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,6 +57,26 @@ class ArticleRestControllerUpdateArticleTest {
   @Autowired
   private ArticleService articleService;
 
+  /**
+   * 日付時刻サービスのモック。
+   *
+   * <p>このフィールドは、Spring Boot のテストコンテキストで利用されるモックオブジェクトとして
+   * {@link DateTimeService} を提供します。テスト実行時に、このモックが本来のサービスの代わりに 使用され、日付や時刻を固定するなどの制御が可能になります。</p>
+   *
+   * <p>{@link MockBean} アノテーションを使用することで、このモックオブジェクトが
+   * Spring の依存性注入コンテナに登録されます。これにより、テスト対象のコードは通常のサービスの代わりに モックオブジェクトを使用します。</p>
+   *
+   * <p>使用例:</p>
+   * <pre>{@code
+   * when(mockDateTimeService.now())
+   *     .thenReturn(LocalDateTime.of(2022, 1, 1, 12, 0));
+   * }</pre>
+   *
+   * <p>この例では、`now()` メソッドが呼び出されると、固定された日時を返します。</p>
+   */
+  @MockBean
+  private DateTimeService mockDateTimeService;
+
 
   /**
    * MockMvc とサービスの初期化確認。
@@ -62,19 +87,28 @@ class ArticleRestControllerUpdateArticleTest {
     assertThat(mockMvc).isNotNull();
     assertThat(userService).isNotNull();
     assertThat(articleService).isNotNull();
+    assertThat(mockDateTimeService).isNotNull();
   }
 
   /**
-   * PUT /articles/{articleId}: 記事編集の正常系テスト。
+   * PUT /articles/{articleId}: 記事の編集が成功する場合の動作をテストする。
    *
    * <p>このテストでは、以下を確認します:</p>
    * <ul>
-   *   <li>認証されたユーザーが既存の記事を編集できること。</li>
-   *   <li>レスポンスにステータスコード 200 OK が含まれること。</li>
-   *   <li>レスポンスボディに編集後のタイトルと本文が反映されること。</li>
-   *   <li>レスポンスに正しい作成者情報が含まれること。</li>
-   *   <li>更新日時が作成日時より後になっていること。</li>
+   *   <li>指定された記事IDに対する編集リクエストが正常に処理されること。</li>
+   *   <li>レスポンスヘッダーに正しいContent-Type（application/json）が設定されていること。</li>
+   *   <li>レスポンスボディに更新された記事データが正確に含まれること。</li>
+   *   <li>作成日時（createdAt）が保持され、更新日時（updatedAt）が更新されること。</li>
    * </ul>
+   *
+   * <p>処理の流れ:</p>
+   * <ol>
+   *   <li>日時を固定してモックし、`create` と `update` のタイミングで異なる日時が設定されるようにする。</li>
+   *   <li>テスト用のユーザーを登録し、そのユーザーの認証情報を用意。</li>
+   *   <li>記事を作成し、そのIDを基に編集リクエストを送信。</li>
+   *   <li>レスポンスのステータスコード、ヘッダー、ボディを検証。</li>
+   *   <li>更新後のタイトル、本文、更新日時が正しく反映されていることを確認。</li>
+   * </ol>
    *
    * @throws Exception テスト実行中の例外
    */
@@ -82,6 +116,14 @@ class ArticleRestControllerUpdateArticleTest {
   @DisplayName("PUT /articles/{articleId}: 記事の編集に成功する")
   void updateArticle_200() throws Exception {
     // ## Arrange ##
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
+
+    // 日付を固定：この値がDBに登録される
+    // 1回目：create時、2回目：update時に実行される。結果、updateの方が最新になる
+    when(mockDateTimeService.now())
+        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20))
+        .thenReturn(TestDateTimeUtil.of(2022, 2, 2, 20, 30));
+
     // テストで使用するユーザー情報を作成: ログイン済みユーザーを模倣
     var newUser = userService.register("test_username", "test_password");
     var expectedUser = new LoggedInUser(newUser.getId(), newUser.getUsername(),
@@ -116,8 +158,9 @@ class ArticleRestControllerUpdateArticleTest {
         .andExpect(jsonPath("$.body").value(updatedBody))
         .andExpect(jsonPath("$.author.id").value(expectedUser.getUserId()))
         .andExpect(jsonPath("$.author.username").value(expectedUser.getUsername()))
-        .andExpect(jsonPath("$.createdAt").value(existingArticle.getCreatedAt().toString()))
-        .andExpect(jsonPath("$.updatedAt", greaterThan(existingArticle.getCreatedAt().toString())))
+        .andExpect(jsonPath("$.createdAt").value(existingArticle.getCreatedAt().format(formatter)))
+        .andExpect(
+            jsonPath("$.updatedAt", greaterThan(existingArticle.getCreatedAt().format(formatter))))
     ;
   }
 
