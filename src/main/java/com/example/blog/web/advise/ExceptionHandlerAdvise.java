@@ -2,9 +2,11 @@ package com.example.blog.web.advise;
 
 import com.example.blog.model.BadRequest;
 import com.example.blog.model.ErrorDetail;
+import com.example.blog.model.Forbidden;
 import com.example.blog.model.InternalServerError;
 import com.example.blog.model.NotFound;
-import com.example.blog.web.exception.ResourceNotFoundException;
+import com.example.blog.service.exception.ResourceNotFoundException;
+import com.example.blog.service.exception.UnauthorizedResourceAccessException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.ArrayList;
@@ -157,6 +159,41 @@ public class ExceptionHandlerAdvise {
         .contentType(MediaType.APPLICATION_PROBLEM_JSON)
         .body(new NotFound()
             .detail("リソースが見つかりません") // エラーメッセージ
+            .instance(URI.create(request.getRequestURI())) // 発生元のリクエスト URI
+        );
+  }
+
+  /**
+   * カスタム例外 {@link UnauthorizedResourceAccessException} が発生した場合のハンドリングを行うメソッド。
+   *
+   * <p>このメソッドは、認可されていないリソースへのアクセスが試みられた際にスローされる
+   * {@link UnauthorizedResourceAccessException} をキャッチし、クライアントに HTTP 403 Forbidden
+   * ステータスコードを返します。</p>
+   *
+   * <p>処理の流れ:</p>
+   * <ol>
+   *   <li>403 Forbidden ステータスコードを設定。</li>
+   *   <li>エラー詳細として、エラーメッセージとリクエスト元のURIを含むレスポンスボディを作成。</li>
+   *   <li>レスポンスをクライアントに返却。</li>
+   * </ol>
+   *
+   * <p>レスポンスは RFC 7807 に準拠したフォーマット（application/problem+json）で返されます。</p>
+   *
+   * @param e       捕捉された {@link UnauthorizedResourceAccessException}
+   * @param request 発生元の HTTP リクエスト情報
+   * @return HTTP 403 Forbidden のレスポンスとエラーメッセージ
+   */
+  @ExceptionHandler(UnauthorizedResourceAccessException.class)
+  public ResponseEntity<Forbidden> handleUnauthorizedResourceAccessException(
+      UnauthorizedResourceAccessException e,
+      HttpServletRequest request
+  ) {
+    // リソースへのアクセスが拒否された場合に 403 ステータスコードを返す
+    return ResponseEntity
+        .status(HttpStatus.FORBIDDEN) // HTTP 403 ステータスコード
+        .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+        .body(new Forbidden()
+            .detail("リソースへのアクセスが拒否されました") // エラーメッセージ
             .instance(URI.create(request.getRequestURI())) // 発生元のリクエスト URI
         );
   }

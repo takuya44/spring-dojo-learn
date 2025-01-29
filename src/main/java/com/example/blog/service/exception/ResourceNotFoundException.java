@@ -1,4 +1,4 @@
-package com.example.blog.web.exception;
+package com.example.blog.service.exception;
 
 /**
  * カスタム例外クラス {@code ResourceNotFoundException}。

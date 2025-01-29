@@ -8,7 +8,7 @@ import com.example.blog.model.ArticleListItemDTO;
 import com.example.blog.model.UserDTO;
 import com.example.blog.security.LoggedInUser;
 import com.example.blog.service.article.ArticleService;
-import com.example.blog.web.exception.ResourceNotFoundException;
+import com.example.blog.service.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -209,14 +209,14 @@ public class ArticleRestController implements ArticlesApi {
         .getPrincipal(); // 現在ログインしているユーザーの情報を取得
 
     // ## 2. 指定された記事を更新 ##
-    return articleService.update(
-            articleId,
-            loggedInUser.getUserId(),
-            form.getTitle(),
-            form.getBody()
-        )
-        .map(ArticleMapper::toArticleDTO)
-        .map(ResponseEntity::ok)
-        .orElseThrow(ResourceNotFoundException::new);
+    var entity = articleService.update(
+        articleId,
+        loggedInUser.getUserId(),
+        form.getTitle(),
+        form.getBody()
+    );
+
+    return ResponseEntity
+        .ok(ArticleMapper.toArticleDTO(entity));
   }
 }

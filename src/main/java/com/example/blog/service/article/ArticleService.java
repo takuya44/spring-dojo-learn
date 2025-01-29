@@ -2,6 +2,8 @@ package com.example.blog.service.article;
 
 import com.example.blog.repository.article.ArticleRepository;
 import com.example.blog.service.DateTimeService;
+import com.example.blog.service.exception.ResourceNotFoundException;
+import com.example.blog.service.exception.UnauthorizedResourceAccessException;
 import com.example.blog.service.user.UserEntity;
 import java.util.List;
 import java.util.Optional;
@@ -83,51 +85,53 @@ public class ArticleService {
   }
 
   /**
-   * 指定された記事を更新するサービスメソッド。
+   * 記事を更新するメソッド。
    *
-   * <p>このメソッドでは、指定された記事IDとユーザーIDを基に、記事のタイトル、本文、更新日時を更新します。
-   * 更新が成功すると、更新された記事のエンティティを返します。</p>
+   * <p>このメソッドは、指定された記事IDに対応する記事データを更新します。
+   * 更新対象のリソースが存在しない場合、またはリソースの所有者ではないユーザーが 更新を試みた場合は、それぞれ例外をスローします。</p>
    *
    * <p>処理の流れ:</p>
    * <ol>
-   *   <li>記事IDを基に記事を検索します。</li>
-   *   <li>該当する記事が存在する場合:
-   *     <ul>
-   *       <li>タイトル、本文、更新日時を新しい値で更新します。</li>
-   *       <li>リポジトリを通じてデータベースに変更を保存します。</li>
-   *       <li>更新後のエンティティを返します。</li>
-   *     </ul>
-   *   </li>
-   *   <li>該当する記事が存在しない場合、空の {@code Optional} を返します。</li>
+   *   <li>記事IDに対応する記事を取得。存在しない場合は {@link ResourceNotFoundException} をスロー。</li>
+   *   <li>記事の所有者がログイン中のユーザーでない場合は {@link UnauthorizedResourceAccessException} をスロー。</li>
+   *   <li>記事のタイトルと本文を更新し、現在日時を更新日時として設定。</li>
+   *   <li>更新した内容をリポジトリを通じて保存。</li>
+   *   <li>更新後のエンティティを返却。</li>
    * </ol>
    *
-   * <p>このメソッドはトランザクション内で実行されるため、データベース操作がすべて成功した場合にのみ変更がコミットされます。</p>
-   *
-   * @param articleId    更新する記事のID
-   * @param userId       更新をリクエストしたユーザーのID
-   * @param updatedTitle 更新後のタイトル
-   * @param updatedBody  更新後の本文
-   * @return 更新された記事のエンティティが含まれる {@code Optional}。該当する記事が存在しない場合は空の {@code Optional} を返す
+   * @param articleId      更新対象の記事のID
+   * @param loggedInUserId 現在ログインしているユーザーのID
+   * @param updatedTitle   更新後のタイトル
+   * @param updatedBody    更新後の本文
+   * @return 更新後の {@link ArticleEntity}
+   * @throws ResourceNotFoundException           指定された記事が存在しない場合
+   * @throws UnauthorizedResourceAccessException 記事の所有者でないユーザーが更新を試みた場合
    */
   @Transactional
-  public Optional<ArticleEntity> update(
+  public ArticleEntity update(
       long articleId,
-      long userId,
+      long loggedInUserId,
       String updatedTitle,
       String updatedBody
   ) {
-    return findById(articleId)
-        .map(entity -> {
-          // 記事データを更新
-          entity.setTitle(updatedTitle);
-          entity.setBody(updatedBody);
-          entity.setUpdatedAt(dateTimeService.now()); // 現在日時を設定
+    // 指定された記事を取得、存在しない場合は例外をスロー
+    var entity = findById(articleId)
+        .orElseThrow(ResourceNotFoundException::new);
 
-          // 更新内容をリポジトリを通じて保存
-          articleRepository.update(entity);
+    // ログイン中のユーザーが記事の所有者でない場合は例外をスロー
+    if (entity.getAuthor().getId() != loggedInUserId) {
+      throw new UnauthorizedResourceAccessException();
+    }
 
-          // 更新後のエンティティを返却
-          return entity;
-        });
+    // 記事データを更新
+    entity.setTitle(updatedTitle);
+    entity.setBody(updatedBody);
+    entity.setUpdatedAt(dateTimeService.now()); // 現在日時を設定
+
+    // 更新内容をリポジトリを通じて保存
+    articleRepository.update(entity);
+
+    // 更新後のエンティティを返却
+    return entity;
   }
 }
