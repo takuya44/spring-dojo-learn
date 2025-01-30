@@ -294,4 +294,71 @@ class ArticleRestControllerUpdateArticleTest {
         .andExpect(jsonPath("$.instance").value("/articles/" + existingArticle.getId()))
     ;
   }
+
+  /**
+   * PUT /articles/{articleId}: CSRF トークンが付加されていない場合の動作をテストする。
+   *
+   * <p>このテストでは、以下を確認します:</p>
+   * <ul>
+   *   <li>リクエストに CSRF トークンが付与されていない場合、403 Forbidden ステータスコードが返されること。</li>
+   *   <li>レスポンスの Content-Type が RFC 7807 に準拠した <code>application/problem+json</code> であること。</li>
+   *   <li>レスポンスボディに CSRF トークンエラーに関する適切なメッセージが含まれること。</li>
+   * </ul>
+   *
+   * <p>処理の流れ:</p>
+   * <ol>
+   *   <li>日時を固定してモックし、<code>create</code> と <code>update</code> のタイミングで異なる日時が設定されるようにする。</li>
+   *   <li>テスト用のユーザーを登録し、そのユーザーの認証情報を用意。</li>
+   *   <li>記事を作成し、その ID を基に <code>PUT</code> リクエストを送信。</li>
+   *   <li>リクエストに CSRF トークンを付与せずに送信し、403 Forbidden が返されることを検証。</li>
+   * </ol>
+   *
+   * <p>エラーメッセージは RFC 7807 に準拠したフォーマットであることを確認します。</p>
+   *
+   * @throws Exception テスト実行中の例外
+   */
+  @Test
+  @DisplayName("PUT /articles/{articleId}: リクエストに CSRF トークンが付加されていないとき 403を返す")
+  void updateArticle_403Forbidden_csrf() throws Exception {
+    // ## Arrange ##
+    // 日付を固定：この値がDBに登録される
+    // 1回目：create時、2回目：update時に実行される。結果、updateの方が最新になる
+    when(mockDateTimeService.now())
+        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20))
+        .thenReturn(TestDateTimeUtil.of(2022, 2, 2, 20, 30));
+
+    // テストで使用するユーザー情報を作成: ログイン済みユーザーを模倣
+    var newUser = userService.register("test_username", "test_password");
+    var existingArticle = articleService.create(newUser.getId(), "test_title", "test_body");
+
+    var expectedUser = new LoggedInUser(newUser.getId(), newUser.getUsername(),
+        newUser.getPassword(), true);
+
+    // JSON形式のリクエストボディを準備
+    var bodyJson = """
+        {
+          "title": "test_title_updated",
+          "body": "test_body_updated"
+        }
+        """;
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        put("/articles/{articleId}", existingArticle.getId())
+            // CSRF トークンを付与しない（.with(csrf()) をコメントアウト）
+            .with(user(expectedUser)) // 認証されたユーザーを設定
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(bodyJson)
+    );
+
+    // ## Assert ##
+    actual
+        .andExpect(status().isForbidden())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Forbidden"))
+        .andExpect(jsonPath("$.status").value(403))
+        .andExpect(jsonPath("$.detail").value("CSRFトークンが不正です"))
+        .andExpect(jsonPath("$.instance").value("/articles/" + existingArticle.getId()))
+    ;
+  }
 }
