@@ -252,8 +252,7 @@ class UserRestControllerTest {
         .andExpect(jsonPath("$.title").value("Bad Request"))
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.detail").value("Invalid request content."))
-        .andExpect(jsonPath("$.type").value("about:blank"))
-        .andExpect(jsonPath("$.instance").isEmpty())
+        .andExpect(jsonPath("$.instance").value("/users"))
         .andExpect(jsonPath("$.errors", hasItem(
                 allOf(
                     hasEntry("pointer", "#/username"),
@@ -307,8 +306,7 @@ class UserRestControllerTest {
         .andExpect(jsonPath("$.title").value("Bad Request"))
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.detail").value("Invalid request content."))
-        .andExpect(jsonPath("$.type").value("about:blank"))
-        .andExpect(jsonPath("$.instance").isEmpty())
+        .andExpect(jsonPath("$.instance").value("/users"))
         .andExpect(jsonPath("$.errors", hasItem(
                 allOf(
                     hasEntry("pointer", "#/username"), // "username" フィールドが原因であることを確認
@@ -363,8 +361,7 @@ class UserRestControllerTest {
         .andExpect(jsonPath("$.title").value("Bad Request"))
         .andExpect(jsonPath("$.status").value(400))
         .andExpect(jsonPath("$.detail").value("Invalid request content."))
-        .andExpect(jsonPath("$.type").value("about:blank"))
-        .andExpect(jsonPath("$.instance").isEmpty())
+        .andExpect(jsonPath("$.instance").value("/users"))
         .andExpect(jsonPath("$.errors", hasItem(
                 allOf(
                     hasEntry("pointer", "#/password"), // "password" フィールドが原因であることを確認

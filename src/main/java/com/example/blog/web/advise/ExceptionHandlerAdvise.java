@@ -37,33 +37,63 @@ public class ExceptionHandlerAdvise {
   private final MessageSource messageSource;
 
   /**
-   * バリデーションエラー時に 400 Bad Request を返す例外ハンドラ。
+   * {@link MethodArgumentNotValidException} を処理する例外ハンドラです。
    *
-   * <p>このメソッドは {@link MethodArgumentNotValidException} をキャッチし、リクエストデータに含まれる
-   * バリデーションエラー情報をクライアントに返すレスポンスを生成します。</p>
-   *
-   * <p>処理の概要:</p>
+   * <p>
+   * このハンドラは、メソッド引数のバリデーションに失敗した際にスローされる例外をキャッチし、 RFC 7807 に準拠したエラーレスポンスを返します。レスポンスには以下の情報が含まれます:
+   * </p>
    * <ul>
-   *   <li>例外オブジェクトからバリデーションエラー情報を抽出。</li>
-   *   <li>エラー詳細をリスト形式で整形し、カスタムレスポンスオブジェクト {@link BadRequest} に設定。</li>
-   *   <li>HTTP 400 Bad Request のレスポンスを生成して返却。</li>
+   *   <li>
+   *     各フィールドエラーに対する {@link ErrorDetail} オブジェクト。JSON Pointer 形式（例："#/フィールド名"）で
+   *     エラー箇所を示し、ローカライズされたエラーメッセージを提供します。
+   *   </li>
+   *   <li>
+   *     エラーが発生したリクエストの URI（instance プロパティ）。
+   *   </li>
    * </ul>
    *
-   * <p>この例外ハンドラは、ユーザー入力のバリデーション失敗を通知し、詳細なエラー情報を含むレスポンスを提供します。</p>
+   * <p>
+   * 主な処理の流れは以下の通りです:
+   * </p>
+   * <ol>
+   *   <li>
+   *     カスタムの {@code BadRequest} オブジェクトを生成し、エラー情報を格納するための土台とします。
+   *   </li>
+   *   <li>
+   *     例外の body から共通のエラー情報を {@code BeanUtils.copyProperties} を用いて転写します。
+   *   </li>
+   *   <li>
+   *     現在のロケールを取得し、ローカライズされたエラーメッセージを生成します。
+   *   </li>
+   *   <li>
+   *     バインディング結果から各フィールドエラーを取り出し、エラー発生箇所を JSON Pointer 形式で表現し、
+   *     対応するエラーメッセージを取得して {@code ErrorDetail} オブジェクトを生成します。
+   *   </li>
+   *   <li>
+   *     生成したエラー詳細のリストを {@code BadRequest} オブジェクトに設定し、リクエストの URI をインスタンスとして設定します。
+   *   </li>
+   *   <li>
+   *     最終的に、HTTP 400 Bad Request を返し、Content-Type を {@code application/problem+json} に設定したレスポンスを生成します。
+   *   </li>
+   * </ol>
    *
-   * @param e バリデーションエラーを含む例外オブジェクト
-   * @return バリデーションエラーの詳細を含む HTTP 400 Bad Request レスポンス
+   * @param e       バリデーションエラーが発生した際にスローされる {@link MethodArgumentNotValidException} オブジェクト
+   * @param request 現在の HTTP リクエストを表す {@link HttpServletRequest}
+   * @return 詳細なバリデーションエラー情報を含む {@code BadRequest} オブジェクトをレスポンスボディに持つ、HTTP 400 Bad Request レスポンス
    */
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<BadRequest> handleMethodArgumentNotValidException(
-      MethodArgumentNotValidException e
+      MethodArgumentNotValidException e,
+      HttpServletRequest request
   ) {
     // バリデーションエラー情報を格納するカスタムオブジェクトを作成
     var body = new BadRequest();
 
-    // 例外オブジェクトからレスポンス用のプロパティをコピー
-    // ここでは、例外から取得したエラー情報をカスタムオブジェクトに転写
+    // 例外の body から共通エラー情報をコピーして、カスタムオブジェクトに転写
     BeanUtils.copyProperties(e.getBody(), body);
+
+    // リクエスト URI を取得し、レスポンスの instance プロパティに設定
+    body.setInstance(URI.create(request.getRequestURI()));
 
     // 現在のロケールを取得（多言語対応）
     var locale = LocaleContextHolder.getLocale();
