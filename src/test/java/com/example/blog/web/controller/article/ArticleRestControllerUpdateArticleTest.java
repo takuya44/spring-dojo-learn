@@ -427,7 +427,7 @@ class ArticleRestControllerUpdateArticleTest {
         .andExpect(jsonPath("$.instance").value("/articles/" + existingArticle.getId()))
     ;
   }
-
+  
   /**
    * PUT /articles: リクエストの title フィールドがバリデーションNGの場合に 400 Bad Request を返すことを検証するテスト。
    *
@@ -435,12 +435,13 @@ class ArticleRestControllerUpdateArticleTest {
    * <ul>
    *   <li>リクエストボディの title フィールドが不正（空文字列）の場合、サーバーが 400 Bad Request を返すこと。</li>
    *   <li>レスポンスの Content-Type が RFC 7807 に準拠した <code>application/problem+json</code> であること。</li>
-   *   <li>レスポンスボディに、"title" フィールドに起因するエラー詳細が含まれ、各エラーフィールド（status, detail, type, instance）が適切に設定されていること。</li>
+   *   <li>レスポンスボディに、"title" フィールドに起因するエラー詳細が含まれ、各エラーフィールド（status, detail, instance）が適切に設定されていること。</li>
+   *   <li>レスポンスの instance プロパティには、リクエストURI（例: "/articles/{articleId}"）が設定されていること。</li>
    * </ul>
    *
    * <p>テストの流れ:</p>
    * <ol>
-   *   <li>日時を固定して、記事作成時と更新時に異なるタイムスタンプが設定されるようにモックする。</li>
+   *   <li>日時を固定して、記事作成時と更新時で異なるタイムスタンプが設定されるようにモックする。</li>
    *   <li>テスト用ユーザーを登録し、そのユーザーで記事を作成する。</li>
    *   <li>認証済み状態で PUT リクエストを送信するが、title フィールドが空であるためバリデーションエラーとなり、400 Bad Request が返されることを検証する。</li>
    * </ol>

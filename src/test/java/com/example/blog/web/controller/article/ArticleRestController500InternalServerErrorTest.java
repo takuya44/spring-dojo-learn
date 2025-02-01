@@ -7,6 +7,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -169,6 +170,72 @@ public class ArticleRestController500InternalServerErrorTest {
     );
 
     // ## Assert ##
+    actual
+        .andExpect(status().isInternalServerError())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Internal Server Error"))
+        .andExpect(jsonPath("$.status").value(500))
+        .andExpect(jsonPath("$.detail").isEmpty())
+        .andExpect(jsonPath("$.instance").value("/articles/" + articleId))
+        .andExpect(jsonPath("$", aMapWithSize(4)));
+  }
+
+  /**
+   * PUT /articles/{articleId}: 500 InternalServerError で stacktrace が露出しないことを検証するテスト。
+   *
+   * <p>このテストでは、以下の点を確認します:</p>
+   * <ul>
+   *   <li>記事更新時に内部エラーが発生した場合、サーバーが 500 Internal Server Error を返すこと。</li>
+   *   <li>レスポンスの Content-Type が RFC 7807 に準拠した <code>application/problem+json</code> であること。</li>
+   *   <li>レスポンスボディにスタックトレースや内部エラーの詳細情報が含まれず、必要最小限のエラー情報のみが返されること。</li>
+   *   <li>具体的には、<code>detail</code> が空であり、レスポンス全体が4つのキー（title, status, detail, instance）のみで構成されていること。</li>
+   *   <li>レスポンスの <code>instance</code> プロパティにリクエストURIが正しく設定されていること。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>テスト用の articleId、userId、title、body を定義し、更新処理が RuntimeException をスローするようにスタブする。</li>
+   *   <li>JSON 形式のリクエストボディを作成する。</li>
+   *   <li>認証情報と CSRF トークンを含む PUT リクエストを送信する。</li>
+   *   <li>受信したレスポンスに対し、HTTP ステータス、Content-Type、各フィールドの値を検証する。</li>
+   * </ol>
+   *
+   * @throws Exception テスト実行中に例外が発生した場合
+   */
+  @Test
+  @DisplayName("PUT /articles/{articleId}: 500 InternalServerError で stacktrace が露出しない")
+  void putArticle_500() throws Exception {
+    // ## Arrange ##
+    // テスト用のパラメータを定義: mockBeanなので実際の動きができないなで必須の入力値のみ用意
+    var articleId = 9999L;    // テスト対象の記事ID
+    var userId = 999L;        // テスト用のユーザーID
+    var title = "test_title"; // 更新に使用するタイトル
+    var body = "test_body";   // 更新に使用する本文
+
+    // articleService.update() を呼び出すと RuntimeException をスローするようにスタブ設定
+    when(articleService.update(articleId, userId, title, body))
+        .thenThrow(RuntimeException.class);
+
+    // テスト用のリクエストボディを JSON 形式で作成
+    var bodyJson = """
+        {
+          "title": "%s",
+          "body": "%s"
+        }
+        """.formatted(title, body);
+
+    // ## Act ##
+    // 認証情報と CSRF トークンを含む PUT リクエストを送信
+    var actual = mockMvc.perform(
+        put("/articles/{articleId}", articleId)
+            .with(csrf())
+            .with(user(new LoggedInUser(userId, "test_username", "", true)))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(bodyJson)
+    );
+
+    // ## Assert ##
+    // レスポンスが 500 Internal Server Error であること、およびレスポンスボディの内容を検証する
     actual
         .andExpect(status().isInternalServerError())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
