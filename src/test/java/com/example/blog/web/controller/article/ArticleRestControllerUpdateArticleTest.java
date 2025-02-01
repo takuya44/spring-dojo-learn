@@ -1,7 +1,10 @@
 package com.example.blog.web.controller.article;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasEntry;
+import static org.hamcrest.Matchers.hasItem;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
@@ -422,6 +425,77 @@ class ArticleRestControllerUpdateArticleTest {
         .andExpect(jsonPath("$.status").value(401))
         .andExpect(jsonPath("$.detail").value("リクエストを実行するにはログインが必要です"))
         .andExpect(jsonPath("$.instance").value("/articles/" + existingArticle.getId()))
+    ;
+  }
+
+  /**
+   * PUT /articles: リクエストの title フィールドがバリデーションNGの場合に 400 Bad Request を返すことを検証するテスト。
+   *
+   * <p>このテストでは、以下の点を確認します:</p>
+   * <ul>
+   *   <li>リクエストボディの title フィールドが不正（空文字列）の場合、サーバーが 400 Bad Request を返すこと。</li>
+   *   <li>レスポンスの Content-Type が RFC 7807 に準拠した <code>application/problem+json</code> であること。</li>
+   *   <li>レスポンスボディに、"title" フィールドに起因するエラー詳細が含まれ、各エラーフィールド（status, detail, type, instance）が適切に設定されていること。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>日時を固定して、記事作成時と更新時に異なるタイムスタンプが設定されるようにモックする。</li>
+   *   <li>テスト用ユーザーを登録し、そのユーザーで記事を作成する。</li>
+   *   <li>認証済み状態で PUT リクエストを送信するが、title フィールドが空であるためバリデーションエラーとなり、400 Bad Request が返されることを検証する。</li>
+   * </ol>
+   *
+   * @throws Exception テスト実行中に例外が発生した場合
+   */
+  @Test
+  @DisplayName("PUT /articles: リクエストの title フィールドがバリデーションNGのとき、400 BadRequest")
+  void putArticle_400BadRequest() throws Exception {
+    // ## Arrange ##
+    // 日付を固定: create時とupdate時で異なるタイムスタンプを設定し、updateの方が最新になるようにする
+    when(mockDateTimeService.now())
+        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20))
+        .thenReturn(TestDateTimeUtil.of(2022, 2, 2, 20, 30));
+
+    // テスト用ユーザーの登録と記事の作成（認証済みユーザーを模倣）
+    var newUser = userService.register("test_username", "test_password");
+    var existingArticle = articleService.create(newUser.getId(), "test_title", "test_body");
+
+    var expectedUser = new LoggedInUser(newUser.getId(), newUser.getUsername(),
+        newUser.getPassword(), true);
+
+    // JSON形式のリクエストボディを準備: title フィールドが空であるためバリデーションに失敗する
+    var bodyJson = """
+        {
+          "title": "",
+          "body": "test_body_updated"
+        }
+        """;
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        put("/articles/{articleId}", existingArticle.getId())
+            .with(csrf())
+            .with(user(expectedUser)) // 認証されたユーザーを設定
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(bodyJson)
+    );
+
+    // ## Assert ##
+    // サーバーが 400 Bad Request を返すことを確認
+    actual
+        .andExpect(status().isBadRequest())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Bad Request"))
+        .andExpect(jsonPath("$.status").value(400))
+        .andExpect(jsonPath("$.detail").value("Invalid request content."))
+        .andExpect(jsonPath("$.type").value("about:blank"))
+        .andExpect(jsonPath("$.instance").isEmpty())
+        .andExpect(jsonPath("$.errors", hasItem(
+            allOf(
+                hasEntry("pointer", "#/title"), // "title" フィールドが原因であることを確認
+                hasEntry("detail", "タイトルは1文字以上255文字以内で入力してください。")
+            )
+        )))
     ;
   }
 }
