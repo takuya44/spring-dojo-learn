@@ -427,7 +427,7 @@ class ArticleRestControllerUpdateArticleTest {
         .andExpect(jsonPath("$.instance").value("/articles/" + existingArticle.getId()))
     ;
   }
-  
+
   /**
    * PUT /articles: リクエストの title フィールドがバリデーションNGの場合に 400 Bad Request を返すことを検証するテスト。
    *
@@ -450,7 +450,7 @@ class ArticleRestControllerUpdateArticleTest {
    */
   @Test
   @DisplayName("PUT /articles: リクエストの title フィールドがバリデーションNGのとき、400 BadRequest")
-  void putArticle_400BadRequest() throws Exception {
+  void updateArticle_400BadRequest() throws Exception {
     // ## Arrange ##
     // 日付を固定: create時とupdate時で異なるタイムスタンプを設定し、updateの方が最新になるようにする
     when(mockDateTimeService.now())
