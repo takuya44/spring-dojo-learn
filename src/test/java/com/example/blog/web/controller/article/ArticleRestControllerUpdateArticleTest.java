@@ -15,10 +15,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.example.blog.security.LoggedInUser;
 import com.example.blog.service.DateTimeService;
+import com.example.blog.service.article.ArticleEntity;
 import com.example.blog.service.article.ArticleService;
+import com.example.blog.service.user.UserEntity;
 import com.example.blog.service.user.UserService;
 import com.example.blog.util.TestDateTimeUtil;
 import java.time.format.DateTimeFormatter;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -80,6 +83,20 @@ class ArticleRestControllerUpdateArticleTest {
   @MockBean
   private DateTimeService mockDateTimeService;
 
+  /**
+   * テスト実行中に操作対象となる既存の記事エンティティ。 各テストケースで、作成済みの記事データを保持するために使用されます。
+   */
+  private ArticleEntity existingArticle;
+
+  /**
+   * テスト用に登録されたユーザーエンティティ。 記事作成時の作者情報や、認証処理でのユーザー情報として利用されます。
+   */
+  private UserEntity author;
+
+  /**
+   * 認証済みユーザーを模倣するためのオブジェクト。 ログイン状態を表現し、テスト内で認証されたユーザーとして利用されます。
+   */
+  private LoggedInUser loggedInAuthor;
 
   /**
    * MockMvc とサービスの初期化確認。
@@ -91,6 +108,48 @@ class ArticleRestControllerUpdateArticleTest {
     assertThat(userService).isNotNull();
     assertThat(articleService).isNotNull();
     assertThat(mockDateTimeService).isNotNull();
+  }
+
+  /**
+   * 各テスト実行前に共通の初期化処理を行います。
+   *
+   * <p>
+   * このメソッドでは、以下の初期設定を行います:
+   * </p>
+   * <ul>
+   *   <li>
+   *     日付の固定化: 記事の作成(create)と更新(update)時に異なる日時が設定されるようにモックを設定しています。<br>
+   *     1回目の呼び出しで 2020/1/2 10:20、2回目の呼び出しで 2022/2/2 20:30 が返されるため、
+   *     更新時のタイムスタンプが作成時より新しくなります。
+   *   </li>
+   *   <li>
+   *     テスト用ユーザーの登録: ログイン済みユーザーを模倣するために、テスト用ユーザー情報を登録します。
+   *   </li>
+   *   <li>
+   *     記事の作成: 登録したユーザーを使用して、初期状態のテスト用記事を作成します。
+   *   </li>
+   *   <li>
+   *     認証情報の設定: テストで認証済みユーザーとして振る舞うための {@code LoggedInUser} オブジェクトを作成します。
+   *   </li>
+   * </ul>
+   */
+  @BeforeEach
+  void beforeEach() {
+    // 日付を固定：この値がDBに登録される
+    // 1回目：create時、2回目：update時に実行される。結果、updateの方が最新になる
+    when(mockDateTimeService.now())
+        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20))
+        .thenReturn(TestDateTimeUtil.of(2022, 2, 2, 20, 30));
+
+    // テストで使用するユーザー情報を作成: ログイン済みユーザーを模倣
+    author = userService.register("test_username", "test_password");
+
+    // 登録したユーザーを使用して、テスト用の記事を作成する。
+    existingArticle = articleService.create(author.getId(), "test_title", "test_body");
+
+    // 認証情報として利用するための LoggedInUser オブジェクトを作成する。
+    loggedInAuthor = new LoggedInUser(author.getId(), author.getUsername(),
+        author.getPassword(), true);
   }
 
   /**
@@ -121,17 +180,6 @@ class ArticleRestControllerUpdateArticleTest {
     // ## Arrange ##
     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX");
 
-    // 日付を固定：この値がDBに登録される
-    // 1回目：create時、2回目：update時に実行される。結果、updateの方が最新になる
-    when(mockDateTimeService.now())
-        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20))
-        .thenReturn(TestDateTimeUtil.of(2022, 2, 2, 20, 30));
-
-    // テストで使用するユーザー情報を作成: ログイン済みユーザーを模倣
-    var newUser = userService.register("test_username", "test_password");
-    var expectedUser = new LoggedInUser(newUser.getId(), newUser.getUsername(),
-        newUser.getPassword(), true);
-    var existingArticle = articleService.create(newUser.getId(), "test_title", "test_body");
     var updatedTitle = existingArticle.getTitle() + "_updated";
     var updatedBody = existingArticle.getBody() + "_updated";
 
@@ -147,7 +195,7 @@ class ArticleRestControllerUpdateArticleTest {
     var actual = mockMvc.perform(
         put("/articles/{articleId}", existingArticle.getId())
             .with(csrf())
-            .with(user(expectedUser)) // 認証されたユーザーを設定
+            .with(user(loggedInAuthor)) // 認証されたユーザーを設定
             .contentType(MediaType.APPLICATION_JSON)
             .content(bodyJson)
     );
@@ -159,8 +207,8 @@ class ArticleRestControllerUpdateArticleTest {
         .andExpect(jsonPath("$.id").value(existingArticle.getId()))
         .andExpect(jsonPath("$.title").value(updatedTitle))
         .andExpect(jsonPath("$.body").value(updatedBody))
-        .andExpect(jsonPath("$.author.id").value(expectedUser.getUserId()))
-        .andExpect(jsonPath("$.author.username").value(expectedUser.getUsername()))
+        .andExpect(jsonPath("$.author.id").value(author.getId()))
+        .andExpect(jsonPath("$.author.username").value(author.getUsername()))
         .andExpect(jsonPath("$.createdAt").value(existingArticle.getCreatedAt().format(formatter)))
         .andExpect(
             jsonPath("$.updatedAt", greaterThan(existingArticle.getCreatedAt().format(formatter))))
@@ -199,9 +247,6 @@ class ArticleRestControllerUpdateArticleTest {
   void updateArticle_404NotFound() throws Exception {
     // ## Arrange ## 前提：DBに３件データある
     var invalidArticleId = 0;
-    var newUser = userService.register("test_username", "test_password");
-    var expectedUser = new LoggedInUser(newUser.getId(), newUser.getUsername(),
-        newUser.getPassword(), true);
 
     // JSON形式のリクエストボディを準備
     var bodyJson = """
@@ -215,7 +260,7 @@ class ArticleRestControllerUpdateArticleTest {
     var actual = mockMvc.perform(
         put("/articles/{articleId}", invalidArticleId)
             .with(csrf())
-            .with(user(expectedUser)) // 認証されたユーザーを設定
+            .with(user(loggedInAuthor)) // 認証されたユーザーを設定
             .contentType(MediaType.APPLICATION_JSON)
             .content(bodyJson)
     );
@@ -256,14 +301,7 @@ class ArticleRestControllerUpdateArticleTest {
   @DisplayName("PUT /articles/{articleId}: 自分が作成した記事以外の記事を編集しようとしたとき、403を返す")
   void updateArticle_403Forbidden_userId() throws Exception {
     // ## Arrange ##
-    // 日付を固定：この値がDBに登録される（今回のテストでは日時の検証は行わない）
-    when(mockDateTimeService.now())
-        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20))
-        .thenReturn(TestDateTimeUtil.of(2022, 2, 2, 20, 30));
-
-    // 記事作成者（creator）を登録し、記事を作成
-    var creator = userService.register("test_username1", "test_password1");
-    var existingArticle = articleService.create(creator.getId(), "test_title", "test_body");
+    // 記事作成者（creator）を登録し、記事を作成: @BeforeEachで定義済み。
 
     // 別のログインユーザー（otherUser）を登録
     var otherUser = userService.register("test_username2", "test_password2");
@@ -324,19 +362,6 @@ class ArticleRestControllerUpdateArticleTest {
   @DisplayName("PUT /articles/{articleId}: リクエストに CSRF トークンが付加されていないとき 403を返す")
   void updateArticle_403Forbidden_csrf() throws Exception {
     // ## Arrange ##
-    // 日付を固定：この値がDBに登録される
-    // 1回目：create時、2回目：update時に実行される。結果、updateの方が最新になる
-    when(mockDateTimeService.now())
-        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20))
-        .thenReturn(TestDateTimeUtil.of(2022, 2, 2, 20, 30));
-
-    // テストで使用するユーザー情報を作成: ログイン済みユーザーを模倣
-    var newUser = userService.register("test_username", "test_password");
-    var existingArticle = articleService.create(newUser.getId(), "test_title", "test_body");
-
-    var expectedUser = new LoggedInUser(newUser.getId(), newUser.getUsername(),
-        newUser.getPassword(), true);
-
     // JSON形式のリクエストボディを準備
     var bodyJson = """
         {
@@ -349,7 +374,7 @@ class ArticleRestControllerUpdateArticleTest {
     var actual = mockMvc.perform(
         put("/articles/{articleId}", existingArticle.getId())
             // CSRF トークンを付与しない（.with(csrf()) をコメントアウト）
-            .with(user(expectedUser)) // 認証されたユーザーを設定
+            .with(user(loggedInAuthor)) // 認証されたユーザーを設定
             .contentType(MediaType.APPLICATION_JSON)
             .content(bodyJson)
     );
@@ -390,16 +415,6 @@ class ArticleRestControllerUpdateArticleTest {
   @DisplayName("PUT /articles/{articleId}: 未ログインのとき、401 を返す")
   void updateArticle_401Unauthorized() throws Exception {
     // ## Arrange ##
-    // 日付を固定：この値がDBに登録される
-    // 1回目：create時、2回目：update時に実行される。結果、updateの方が最新になる
-    when(mockDateTimeService.now())
-        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20))
-        .thenReturn(TestDateTimeUtil.of(2022, 2, 2, 20, 30));
-
-    // テストで使用するユーザー情報を作成: ログイン済みユーザーを模倣
-    var newUser = userService.register("test_username", "test_password");
-    var existingArticle = articleService.create(newUser.getId(), "test_title", "test_body");
-
     // JSON形式のリクエストボディを準備
     var bodyJson = """
         {
@@ -412,7 +427,7 @@ class ArticleRestControllerUpdateArticleTest {
     var actual = mockMvc.perform(
         put("/articles/{articleId}", existingArticle.getId())
             .with(csrf()) // CSRF トークンは付与するが、認証情報は設定しない
-            // .with(user(expectedUser)) // 認証ユーザーを設定しない（未ログイン状態）
+            // .with(user(loggedInAuthor)) // 認証ユーザーを設定しない（未ログイン状態）
             .contentType(MediaType.APPLICATION_JSON)
             .content(bodyJson)
     );
@@ -452,18 +467,6 @@ class ArticleRestControllerUpdateArticleTest {
   @DisplayName("PUT /articles: リクエストの title フィールドがバリデーションNGのとき、400 BadRequest")
   void updateArticle_400BadRequest() throws Exception {
     // ## Arrange ##
-    // 日付を固定: create時とupdate時で異なるタイムスタンプを設定し、updateの方が最新になるようにする
-    when(mockDateTimeService.now())
-        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20))
-        .thenReturn(TestDateTimeUtil.of(2022, 2, 2, 20, 30));
-
-    // テスト用ユーザーの登録と記事の作成（認証済みユーザーを模倣）
-    var newUser = userService.register("test_username", "test_password");
-    var existingArticle = articleService.create(newUser.getId(), "test_title", "test_body");
-
-    var expectedUser = new LoggedInUser(newUser.getId(), newUser.getUsername(),
-        newUser.getPassword(), true);
-
     // JSON形式のリクエストボディを準備: title フィールドが空であるためバリデーションに失敗する
     var bodyJson = """
         {
@@ -476,7 +479,7 @@ class ArticleRestControllerUpdateArticleTest {
     var actual = mockMvc.perform(
         put("/articles/{articleId}", existingArticle.getId())
             .with(csrf())
-            .with(user(expectedUser)) // 認証されたユーザーを設定
+            .with(user(loggedInAuthor)) // 認証されたユーザーを設定
             .contentType(MediaType.APPLICATION_JSON)
             .content(bodyJson)
     );
