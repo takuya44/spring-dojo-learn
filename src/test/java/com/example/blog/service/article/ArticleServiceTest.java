@@ -1,12 +1,14 @@
 package com.example.blog.service.article;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import com.example.blog.config.MybatisDefaultDatasourceTest;
 import com.example.blog.repository.article.ArticleRepository;
 import com.example.blog.repository.user.UserRepository;
 import com.example.blog.service.DateTimeService;
+import com.example.blog.service.exception.ResourceNotFoundException;
 import com.example.blog.service.user.UserEntity;
 import com.example.blog.util.TestDateTimeUtil;
 import org.junit.jupiter.api.DisplayName;
@@ -272,6 +274,45 @@ class ArticleServiceTest {
       assertThat(actualRecord.getAuthor().getUsername()).isEqualTo(expectedUser.getUsername());
       assertThat(actualRecord.getAuthor().getPassword()).isNull(); // パスワード情報は返されないこと
       assertThat(actualRecord.getAuthor().isEnabled()).isEqualTo(expectedUser.isEnabled());
+    });
+  }
+
+  /**
+   * update_throwResourceNotFoundException: 指定された記事 ID に該当する記事が存在しない場合、update 処理が
+   * ResourceNotFoundException を throw することを検証するテストです。
+   *
+   * <p>このテストでは、以下の点を確認します:</p>
+   * <ul>
+   *   <li>存在しない記事 ID を指定した場合、update メソッドが ResourceNotFoundException を発生させること。</li>
+   *   <li>テスト用のユーザー情報は正常に作成され、データベースに登録されていること。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>存在しない記事 ID（invalidArticleId）を定義する。</li>
+   *   <li>テスト用のユーザー（expectedUser）を作成し、データベースに挿入する。</li>
+   *   <li>存在しない記事 ID を使用して update メソッドを呼び出し、ResourceNotFoundException が throw されることを検証する。</li>
+   * </ol>
+   */
+  @Test
+  @DisplayName("update: 指定された ID の記事が見つからないとき ResourceNotFoundException を throw する")
+  void update_throwResourceNotFoundException() {
+    // ## Arrange ##
+    // 存在しない記事 ID を定義します。ここでは 0L を使用しています。
+    var invalidArticleId = 0L;
+
+    // ユーザー情報を準備してデータベースに挿入
+    var expectedUser = new UserEntity();
+    expectedUser.setUsername("test_user"); // ユーザー名を設定
+    expectedUser.setPassword("test_password"); // パスワードを設定
+    expectedUser.setEnabled(true); // 有効なユーザーであることを示す
+    userRepository.insert(expectedUser); // ユーザーをデータベースに挿入
+
+    // ## Act & Assert ##
+    // 存在しない記事 ID を指定して update() メソッドを呼び出し、
+    // ResourceNotFoundException が throw されることを検証
+    assertThrows(ResourceNotFoundException.class, () -> {
+      cut.update(invalidArticleId, expectedUser.getId(), "updated_title", "updated_body");
     });
   }
 }
