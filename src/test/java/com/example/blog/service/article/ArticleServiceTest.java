@@ -317,6 +317,50 @@ class ArticleServiceTest {
     });
   }
 
+  /**
+   * update_throwUnauthorizedResourceAccessException:
+   * <p>
+   * 自分以外が作成した記事を編集しようとした場合、update 処理が UnauthorizedResourceAccessException を throw することを検証するテストです。
+   * </p>
+   *
+   * <p>このテストでは、以下の点を確認します:</p>
+   * <ul>
+   *   <li>記事作成者と異なるユーザーが記事の更新を試みた場合、権限がないとして例外が発生すること。</li>
+   *   <li>正しいユーザー情報および記事データが用意され、記事の更新処理が実行される前提条件が整っていること。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     <strong>Arrange:</strong>
+   *     <ul>
+   *       <li>
+   *         更新処理で使用される日時を固定し、モックからその日時を返すように設定します（ここでは expectedUpdatedAt として 2020/1/2 10:20）。
+   *       </li>
+   *       <li>
+   *         記事の作成者となるユーザー（author）を生成し、必要な情報（ユーザー名、パスワード、アクティブ状態）を設定後、データベースに挿入します。
+   *       </li>
+   *       <li>
+   *         上記のユーザーを用いて記事を作成し、更新対象となる記事（existingArticle）を生成します。
+   *       </li>
+   *       <li>
+   *         別のユーザー（otherUser）を生成し、同様に必要な情報を設定後、データベースに挿入します。こちらが記事更新を試みるユーザーです。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     <strong>Act & Assert:</strong>
+   *     <ul>
+   *       <li>
+   *         存在する記事に対して、作成者とは異なるユーザー（otherUser）の ID を指定して更新処理（cut.update）を実行します。
+   *       </li>
+   *       <li>
+   *         この際、更新処理が UnauthorizedResourceAccessException を throw することを assertThrows により検証します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   */
   @Test
   @DisplayName("update: 自分以外が作成した記事を編集しようとしたとき UnauthorizedResourceAccessException を throw する")
   void update_throwUnauthorizedResourceAccessException() {
@@ -326,22 +370,26 @@ class ArticleServiceTest {
     when(mockDateTimeService.now())
         .thenReturn(expectedUpdatedAt);
 
-    // ユーザー情報を準備してデータベースに挿入
+    // 作成者ユーザーを生成し、必要な情報を設定した上でデータベースに登録します。
     var author = new UserEntity();
-    author.setUsername("test_user"); // ユーザー名を設定
+    author.setUsername("test_user"); // 作成者のユーザー名を設定
     author.setPassword("test_password"); // パスワードを設定
     author.setEnabled(true); // 有効なユーザーであることを示す
-    userRepository.insert(author); // ユーザーをデータベースに挿入
+    userRepository.insert(author); // データベースに作成者ユーザーを挿入
 
+    // 作成者ユーザーを用いて記事を作成します。
     var existingArticle = cut.create(author.getId(), "test_title", "test_body");
 
+    // 更新を試みる別のユーザーを生成し、データベースに登録します。
     var otherUser = new UserEntity();
-    otherUser.setUsername("other_user"); // ユーザー名を設定
-    otherUser.setPassword("other_password"); // パスワードを設定
-    otherUser.setEnabled(true); // 有効なユーザーであることを示す
-    userRepository.insert(otherUser); // ユーザーをデータベースに挿入
+    otherUser.setUsername("other_user"); // 別のユーザー名を設定
+    otherUser.setPassword("other_password"); // 別のパスワードを設定
+    otherUser.setEnabled(true); // ユーザーが有効であることを示す
+    userRepository.insert(otherUser); // データベースに別のユーザーを挿入
 
     // ## Act & Assert ##
+    // 存在する記事に対し、作成者とは異なるユーザー (otherUser) の ID を指定して更新処理を実行し、
+    // UnauthorizedResourceAccessException が throw されることを検証します。
     assertThrows(UnauthorizedResourceAccessException.class, () -> {
       cut.update(existingArticle.getId(), otherUser.getId(), "updated_title", "updated_body");
     });
