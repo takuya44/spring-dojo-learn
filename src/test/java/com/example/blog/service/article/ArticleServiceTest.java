@@ -9,6 +9,7 @@ import com.example.blog.repository.article.ArticleRepository;
 import com.example.blog.repository.user.UserRepository;
 import com.example.blog.service.DateTimeService;
 import com.example.blog.service.exception.ResourceNotFoundException;
+import com.example.blog.service.exception.UnauthorizedResourceAccessException;
 import com.example.blog.service.user.UserEntity;
 import com.example.blog.util.TestDateTimeUtil;
 import org.junit.jupiter.api.DisplayName;
@@ -313,6 +314,36 @@ class ArticleServiceTest {
     // ResourceNotFoundException が throw されることを検証
     assertThrows(ResourceNotFoundException.class, () -> {
       cut.update(invalidArticleId, expectedUser.getId(), "updated_title", "updated_body");
+    });
+  }
+
+  @Test
+  @DisplayName("update: 自分以外が作成した記事を編集しようとしたとき UnauthorizedResourceAccessException を throw する")
+  void update_throwUnauthorizedResourceAccessException() {
+    // ## Arrange ##
+    // 更新処理で使用される期待の更新日時を設定します。
+    var expectedUpdatedAt = TestDateTimeUtil.of(2020, 1, 2, 10, 20);
+    when(mockDateTimeService.now())
+        .thenReturn(expectedUpdatedAt);
+
+    // ユーザー情報を準備してデータベースに挿入
+    var author = new UserEntity();
+    author.setUsername("test_user"); // ユーザー名を設定
+    author.setPassword("test_password"); // パスワードを設定
+    author.setEnabled(true); // 有効なユーザーであることを示す
+    userRepository.insert(author); // ユーザーをデータベースに挿入
+
+    var existingArticle = cut.create(author.getId(), "test_title", "test_body");
+
+    var otherUser = new UserEntity();
+    otherUser.setUsername("other_user"); // ユーザー名を設定
+    otherUser.setPassword("other_password"); // パスワードを設定
+    otherUser.setEnabled(true); // 有効なユーザーであることを示す
+    userRepository.insert(otherUser); // ユーザーをデータベースに挿入
+
+    // ## Act & Assert ##
+    assertThrows(UnauthorizedResourceAccessException.class, () -> {
+      cut.update(existingArticle.getId(), otherUser.getId(), "updated_title", "updated_body");
     });
   }
 }
