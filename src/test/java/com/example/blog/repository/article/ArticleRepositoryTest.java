@@ -358,4 +358,117 @@ class ArticleRepositoryTest {
           .isEqualTo(articleToUpdate);
     });
   }
+
+  /**
+   * update_invalidArticleId: 指定された記事IDが存在しない場合、update メソッドがデータベースに登録済みの記事を更新しないことを検証するテストです。
+   *
+   * <p>このテストでは、以下の点を確認します:</p>
+   * <ul>
+   *   <li>存在する記事に対して、無効な記事ID（0L）を指定した更新操作が行われた場合、既存の記事は変更されない。</li>
+   *   <li>更新操作後も、記事の内容は初期作成時の状態と一致している。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange:
+   *     <ul>
+   *       <li>
+   *         更新後に期待されるタイトル、本文、作成日時、更新日時を定義します。
+   *       </li>
+   *       <li>
+   *         テスト用ユーザーを生成し、データベースに登録します。
+   *       </li>
+   *       <li>
+   *         テスト用ユーザーを使用して初期状態の記事を作成し、データベースに登録します。
+   *         ※記事作成時は createdAt と updatedAt が同一となっています。
+   *       </li>
+   *       <li>
+   *         更新対象の記事オブジェクトを生成しますが、その際、記事IDとして存在しない値（0L）を指定します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Act:
+   *     <ul>
+   *       <li>
+   *         update メソッドを呼び出して、記事の更新操作を実行します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Assert:
+   *     <ul>
+   *       <li>
+   *         データベースに登録されている元の記事（作成時の記事）が更新されていないことを検証します。
+   *         ここでは、再帰的比較を使用して、全フィールドが初期状態と一致しているかを確認します。
+   *       </li>
+   *       <li>
+   *         再帰的比較では、オブジェクトの全てのフィールドや入れ子になっているオブジェクトも含めて比較します。
+   *         このテストでは、セキュリティ上の理由から author.password フィールドは比較対象から除外しています。
+   *       </li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   */
+  @Test
+  @DisplayName("update: 指定された記事IDが存在しないとき、更新しない")
+  void update_invalidArticleId() {
+    // ## Arrange ##
+    // 更新後に期待されるタイトルと本文を定義
+    var expectedTitle = "test_title_update";
+    var expectedBody = "test_body_update";
+
+    // 記事作成時の日時を定義（作成日時）
+    var expectedCreatedAt = TestDateTimeUtil.of(2020, 1, 1, 10, 30);
+    // 更新日時は作成日時の1日後とする
+    var expectedUpdatedAt = expectedCreatedAt.plusDays(1);
+
+    // テスト用ユーザーを生成（ID は自動生成されるため null で初期化）
+    var expectedUser = new UserEntity(null, "test_username", "test_password", true);
+    // ユーザーをデータベースに登録
+    userRepository.insert(expectedUser);
+
+    // 初期状態の記事を生成
+    // 新規作成のため、createdAt と updatedAt は同じ日時です。
+    var articleToCreate = new ArticleEntity(
+        null,
+        "test_title",
+        "test_body",
+        expectedUser,
+        expectedCreatedAt,
+        expectedCreatedAt // 記事を新規作成したため、createAt = updateAt
+    );
+    // 作成した記事をデータベースに登録
+    cut.insert(articleToCreate);
+
+    // 更新対象となる記事オブジェクトを生成
+    // ここでは、タイトル、本文、および更新日時 (updatedAt) を更新するが、
+    // 記事IDとして存在しない値（0L）を指定する
+    var articleToUpdate = new ArticleEntity(
+        0L,
+        expectedTitle,                    // 更新後のタイトル
+        expectedBody,                     // 更新後の本文
+        articleToCreate.getAuthor(),      // 作者情報は変更なし
+        articleToCreate.getCreatedAt(),   // 作成日時は変更なし
+        expectedUpdatedAt                 // 更新日時を更新
+    );
+
+    // ## Act ##
+    // update メソッドを呼び出して記事を更新する
+    cut.update(articleToUpdate);
+
+    // ## Assert ##
+    // データベースから更新後の記事を取得し、更新操作が無視されていることを検証
+    // すなわち、記事は作成時の状態 (articleToCreate) のままであることを確認する
+    var actual = cut.selectById(articleToCreate.getId());
+    assertThat(actual).hasValueSatisfying(actualArticle -> {
+      // 再帰的比較により、すべてのフィールドが articleToUpdate と一致することを確認
+      // ただし、セキュリティ上、author.password は無視して比較する
+      assertThat(actualArticle)
+          .usingRecursiveComparison()
+          .ignoringFields("author.password")
+          .isEqualTo(articleToCreate);
+    });
+  }
 }
