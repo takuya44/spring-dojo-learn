@@ -281,4 +281,81 @@ class ArticleRepositoryTest {
         .ignoringFields("author.password")
         .isEqualTo(expectedArticle1);
   }
+
+  /**
+   * update_success: 記事の title、body、および updatedAt を更新することを検証するテストです。
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange: 更新後に期待されるタイトル、本文、作成日時、および更新日時を定義し、テスト用ユーザーを作成してデータベースに登録します。
+   *     次に、初期状態の記事（作成時の createdAt と updatedAt は同一）を作成・登録します。
+   *   </li>
+   *   <li>
+   *     Act: 既存の記事のタイトル、本文、および更新日時を更新するためのオブジェクトを作成し、update メソッドを呼び出して記事を更新します。
+   *   </li>
+   *   <li>
+   *     Assert: データベースから更新後の記事を取得し、再帰的な比較により各フィールドが期待通りに更新されているかを検証します。<br>
+   *     なお、セキュリティの観点から author.password は比較対象から除外しています。
+   *   </li>
+   * </ol>
+   */
+  @Test
+  @DisplayName("update: 記事の title/body/updatedAt を更新する")
+  void update_success() {
+    // ## Arrange ##
+    // 更新後に期待されるタイトルと本文を定義
+    var expectedTitle = "test_title_update";
+    var expectedBody = "test_body_update";
+
+    // 記事作成時の日時を定義（作成日時）
+    var expectedCreatedAt = TestDateTimeUtil.of(2020, 1, 1, 10, 30);
+    // 更新日時は作成日時の1日後とする
+    var expectedUpdatedAt = expectedCreatedAt.plusDays(1);
+
+    // テスト用ユーザーを生成（ID は自動生成されるため null で初期化）
+    var expectedUser = new UserEntity(null, "test_username", "test_password", true);
+    // ユーザーをデータベースに登録
+    userRepository.insert(expectedUser);
+
+    // 初期状態の記事を生成
+    // 新規作成のため、createdAt と updatedAt は同じ日時です。
+    var articleToCreate = new ArticleEntity(
+        null,
+        "test_title",
+        "test_body",
+        expectedUser,
+        expectedCreatedAt,
+        expectedCreatedAt // 記事を新規作成したため、createAt = updateAt
+    );
+    // 作成した記事をデータベースに登録
+    cut.insert(articleToCreate);
+
+    // 更新対象となる記事オブジェクトを生成
+    // ここでは、タイトル、本文、および更新日時 (updatedAt) を更新します。
+    var articleToUpdate = new ArticleEntity(
+        articleToCreate.getId(),          // 既存の記事のIDを利用
+        expectedTitle,                    // 更新後のタイトル
+        expectedBody,                     // 更新後の本文
+        articleToCreate.getAuthor(),      // 作者情報は変更なし
+        articleToCreate.getCreatedAt(),   // 作成日時は変更なし
+        expectedUpdatedAt                 // 更新日時を更新
+    );
+
+    // ## Act ##
+    // update メソッドを呼び出して記事を更新する
+    cut.update(articleToUpdate);
+
+    // ## Assert ##
+    // データベースから更新後の記事を取得し、期待される内容と一致しているか検証
+    var actual = cut.selectById(articleToUpdate.getId());
+    assertThat(actual).hasValueSatisfying(actualArticle -> {
+      // 再帰的比較により、すべてのフィールドが articleToUpdate と一致することを確認
+      // ただし、セキュリティ上、author.password は無視して比較する
+      assertThat(actualArticle)
+          .usingRecursiveComparison()
+          .ignoringFields("author.password")
+          .isEqualTo(articleToUpdate);
+    });
+  }
 }
