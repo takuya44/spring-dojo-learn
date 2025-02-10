@@ -471,4 +471,104 @@ class ArticleRepositoryTest {
           .isEqualTo(articleToCreate);
     });
   }
+
+  /**
+   * update_invalidAuthorId: 著者以外のユーザーIDが指定された場合に、記事の更新が行われず、元の状態が保持されることを検証するテストです。
+   *
+   * <p>このテストでは、以下の点を確認します:</p>
+   * <ul>
+   *   <li>記事作成者(author)と異なるユーザー(otherUser)が更新対象として指定された場合、記事の内容が変更されない。</li>
+   *   <li>更新後のデータベース上のレコードが、初期作成時の状態(articleToCreate)と一致すること。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange:
+   *     <ul>
+   *       <li>更新後に期待されるタイトル、本文、作成日時、更新日時を定義します。</li>
+   *       <li>著者ユーザー(author)を生成してデータベースに登録します。</li>
+   *       <li>別のユーザー(otherUser)を生成してデータベースに登録します。</li>
+   *       <li>authorを使って初期状態の記事(articleToCreate)を作成・登録します。</li>
+   *       <li>更新対象の記事(articleToUpdate)を生成しますが、authorではなくotherUserを指定して更新を試みます。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Act:
+   *     <ul>
+   *       <li>updateメソッドを呼び出して、記事の更新処理を実行します。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Assert:
+   *     <ul>
+   *       <li>データベースから記事を取得し、元の状態(articleToCreate)と一致していることを再帰的比較により検証します。</li>
+   *       <li>再帰的比較では、author.passwordフィールドはセキュリティ上の理由から比較対象から除外しています。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   */
+  @Test
+  @DisplayName("update: 著者以外のユーザーIDが指定されているとき、更新しない")
+  void update_invalidAuthorId() {
+    // ## Arrange ##
+    // 更新後に期待されるタイトルと本文を定義
+    var expectedTitle = "test_title_update";
+    var expectedBody = "test_body_update";
+
+    // 記事作成時の日時を定義（作成日時）
+    var expectedCreatedAt = TestDateTimeUtil.of(2020, 1, 1, 10, 30);
+    // 更新日時は作成日時の1日後とする
+    var expectedUpdatedAt = expectedCreatedAt.plusDays(1);
+
+    // 著者ユーザーを生成（ID は自動生成されるため null で初期化）
+    var author = new UserEntity(null, "test_username", "test_password", true);
+    // 著者ユーザーをデータベースに登録
+    userRepository.insert(author);
+
+    // 別のユーザーを生成（更新操作を試みるユーザーとして）
+    var otherUser = new UserEntity(null, "test_username1", "test_password1", true);
+    // 別ユーザーをデータベースに登録
+    userRepository.insert(otherUser);
+
+    // 初期状態の記事を生成
+    // 新規作成のため、createdAt と updatedAt は同じ日時です。
+    var articleToCreate = new ArticleEntity(
+        null,
+        "test_title",
+        "test_body",
+        author,
+        expectedCreatedAt,
+        expectedCreatedAt // 記事を新規作成したため、createAt = updateAt
+    );
+    // 作成した記事をデータベースに登録
+    cut.insert(articleToCreate);
+
+    // 更新対象となる記事オブジェクトを生成
+    // ここでは、既存の記事IDを使用しているが、更新操作において更新者としてotherUserが指定される
+    var articleToUpdate = new ArticleEntity(
+        articleToCreate.getId(),          // 既存の記事のIDを利用
+        expectedTitle,                    // 更新後のタイトル
+        expectedBody,                     // 更新後の本文
+        otherUser,                        // 更新者として、元の記事作成者(author)とは異なるユーザー(otherUser)を指定
+        articleToCreate.getCreatedAt(),   // 作成日時は変更なし
+        expectedUpdatedAt                 // 更新日時を更新（更新処理が成功した場合に反映される値）
+    );
+
+    // ## Act ##
+    // update メソッドを呼び出して記事を更新する
+    cut.update(articleToUpdate);
+
+    // ## Assert ##
+    // データベースから記事を取得し、更新が行われず元の状態(articleToCreate)のままであることを検証する
+    var actual = cut.selectById(articleToCreate.getId());
+    assertThat(actual).hasValueSatisfying(actualArticle -> {
+      // 再帰的比較により、すべてのフィールドが articleToUpdate と一致することを確認
+      // ただし、セキュリティ上、author.password は無視して比較する
+      assertThat(actualArticle)
+          .usingRecursiveComparison()
+          .ignoringFields("author.password")
+          .isEqualTo(articleToCreate);
+    });
+  }
 }
