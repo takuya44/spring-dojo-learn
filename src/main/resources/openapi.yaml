@@ -235,6 +235,34 @@ paths:
           $ref: "#/components/responses/NotFoundResponse"
         '500':
           $ref: "#/components/responses/InternalServerErrorResponse"
+    delete:
+      tags: [ articles ]
+      summary: 記事を削除します
+      description: 記事を削除します
+      operationId: deleteArticle
+      parameters:
+        - name: articleId
+          in: path
+          description: 記事のID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      security:
+        - cookieAuth: [ ]
+        - csrfProtectionHeader: [ ]
+        - csrfProtectionCookie: [ ]
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: "#/components/responses/UnauthorizedResponse"
+        '403':
+          $ref: "#/components/responses/ForbiddenResponse"
+        '404':
+          $ref: "#/components/responses/NotFoundResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerErrorResponse"
 components:
   schemas:
     # 500エラー
