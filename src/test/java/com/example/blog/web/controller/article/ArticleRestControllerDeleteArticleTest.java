@@ -28,11 +28,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * ArticleRestController の PUT /articles/{articleId} エンドポイントに関するテストクラス。
- *
- * <p>このクラスでは、記事の編集機能が正しく動作するかを検証します。</p>
- */
 @SpringBootTest
 @AutoConfigureMockMvc
 @Transactional
@@ -148,23 +143,50 @@ class ArticleRestControllerDeleteArticleTest {
         author.getPassword(), true);
   }
 
+  /**
+   * DELETE /articles/{articleId}: 記事の削除に成功することを検証するテストです。
+   *
+   * <p>このテストでは、以下の点を確認します:</p>
+   * <ul>
+   *   <li>認証済みユーザーとして、指定された記事IDに対して DELETE リクエストを送信すると、
+   *       サーバーが 204 No Content のステータスコードを返すこと。</li>
+   *   <li>レスポンスボディが空であること。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange: 削除対象の記事（existingArticle）のIDおよび認証情報（loggedInAuthor）は事前にセットアップ済みです。
+   *   </li>
+   *   <li>
+   *     Act: DELETE リクエストを送信し、サーバーのレスポンスを取得します。
+   *   </li>
+   *   <li>
+   *     Assert: レスポンスの HTTP ステータスが 204 No Content であり、レスポンスボディが空であることを検証します。
+   *   </li>
+   * </ol>
+   *
+   * @throws Exception テスト実行中に例外が発生した場合
+   */
   @Test
   @DisplayName("DELETE /articles/{articleId}: 記事の削除に成功する")
   void deleteArticle_204NoContent() throws Exception {
     // ## Arrange ##
 
     // ## Act ##
+    // 認証済みのユーザー (loggedInAuthor) として、指定された記事ID (existingArticle.getId()) の記事削除リクエストを送信します。
     var actual = mockMvc.perform(
         delete("/articles/{articleId}", existingArticle.getId())
-            .with(csrf())
+            .with(csrf()) // CSRF トークンを付与してセキュリティ対策
             .with(user(loggedInAuthor)) // 認証されたユーザーを設定
-            .contentType(MediaType.APPLICATION_JSON)
+            .contentType(MediaType.APPLICATION_JSON) // リクエストのContent-Typeを指定
     );
 
     // ## Assert ##
+    // サーバーが 204 No Content のステータスを返し、レスポンスボディが空であることを検証します。
     actual
-        .andExpect(status().isNoContent())
-        .andExpect(content().string(is(emptyString())))
+        .andExpect(status().isNoContent()) // HTTPステータスが 204 であることを確認
+        .andExpect(content().string(is(emptyString()))) // レスポンスボディが空であることを確認
     ;
   }
 
