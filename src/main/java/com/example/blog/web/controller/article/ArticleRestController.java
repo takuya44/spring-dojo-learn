@@ -219,4 +219,47 @@ public class ArticleRestController implements ArticlesApi {
     return ResponseEntity
         .ok(ArticleMapper.toArticleDTO(entity));
   }
+
+  /**
+   * 指定された記事IDに対応する記事を削除し、削除成功時は HTTP 204 No Content のレスポンスを返します。
+   *
+   * <p>処理の流れ:</p>
+   * <ol>
+   *   <li>
+   *     セキュリティコンテキストから現在ログインしているユーザー情報（LoggedInUser）を取得します。
+   *     これにより、リクエストを送信したユーザーが誰であるかを判定します。
+   *   </li>
+   *   <li>
+   *     取得したユーザーのIDと指定された記事IDを基に、記事削除処理を実行します。
+   *     この際、記事が実際にそのユーザーによって作成されたものであることを内部で確認することが前提です。
+   *   </li>
+   *   <li>
+   *     削除処理が成功した場合、HTTP 204 No Content のレスポンスを返します。
+   *   </li>
+   * </ol>
+   *
+   * @param articleId 削除対象の文章のID
+   * @return 削除成功時に内容が空の HTTP 204 No Content レスポンス
+   */
+  @Override
+  public ResponseEntity<Void> deleteArticle(Long articleId) {
+    // ## 1. 認証情報から現在ログインしているユーザー情報を取得 ##
+    // セキュリティコンテキストから認証情報を取り出し、現在ログインしているユーザーの詳細（LoggedInUser）を取得します。
+    var loggedInUser = (LoggedInUser) SecurityContextHolder
+        .getContext() // セキュリティコンテキストを取得
+        .getAuthentication() // 認証情報を取得
+        .getPrincipal(); // 現在ログインしているユーザーの情報を取得
+
+    // ## 2. 指定された記事を削除 ##
+    // 取得したユーザーIDとリクエストで指定された記事IDを元に、記事削除処理を実行します。
+    articleService.delete(
+        loggedInUser.getUserId(),
+        articleId
+    );
+
+    // 削除処理が完了したら、HTTP 204 No Content レスポンスを返却します。
+    return ResponseEntity
+        .noContent()
+        .build();
+  }
 }

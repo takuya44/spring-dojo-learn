@@ -3,6 +3,7 @@ package com.example.blog.repository.article;
 import com.example.blog.service.article.ArticleEntity;
 import java.util.List;
 import java.util.Optional;
+import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
@@ -130,4 +131,34 @@ public interface ArticleRepository {
         AND user_id  = #{author.id}
       """)
   void update(ArticleEntity entity);
+
+  /**
+   * 指定された ArticleEntity に基づいて、記事を削除する SQL DELETE ステートメントです。
+   *
+   * <p>
+   * このメソッドは MyBatis のマッパーで使用され、次の条件を満たす記事を削除します:
+   * </p>
+   * <ul>
+   *   <li>
+   *     {@code id = #{id}} - 文章のIDが、ArticleEntity の {@code id} フィールドと一致する。
+   *   </li>
+   *   <li>
+   *     {@code user_id = #{author.id}} - 文章の所有者（ユーザーID）が、ArticleEntity の {@code author.id} と一致する。
+   *   </li>
+   * </ul>
+   *
+   * <p>
+   * これにより、指定された記事IDと所有者情報が正しい場合にのみ、記事が削除されることが保証されます。
+   * 例えば、誤って他のユーザーの記事が削除されるのを防ぐために、この条件が利用されます。
+   * </p>
+   *
+   * @param entity 削除対象の記事を表す ArticleEntity オブジェクト。 このオブジェクトの {@code id} と {@code author.id}
+   *               が、削除の条件として利用されます。
+   */
+  @Delete("""
+      DELETE FROM articles
+      WHERE id = #{id}
+        AND user_id = #{author.id}
+      """)
+  void delete(ArticleEntity entity);
 }

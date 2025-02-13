@@ -134,4 +134,43 @@ public class ArticleService {
     // 更新後のエンティティを返却
     return entity;
   }
+
+  /**
+   * 指定された記事を削除するメソッドです。
+   *
+   * <p>
+   * このメソッドはトランザクション内で実行され、以下の処理を行います:
+   * </p>
+   * <ol>
+   *   <li>
+   *     指定された記事IDに基づいて記事を取得します。記事が存在しない場合は、{@link ResourceNotFoundException} をスローします。
+   *   </li>
+   *   <li>
+   *     取得した記事の作者のIDと、現在ログインしているユーザーID（loggedInUserId）を比較し、一致しない場合は
+   *     {@link UnauthorizedResourceAccessException} をスローします。
+   *   </li>
+   *   <li>
+   *     上記の検証に成功した場合、記事リポジトリを通じて該当記事を削除します。
+   *   </li>
+   * </ol>
+   *
+   * @param loggedInUserId 現在ログインしているユーザーのID
+   * @param articleId      削除対象の文章のID
+   * @throws ResourceNotFoundException           指定された記事が存在しない場合にスローされます。
+   * @throws UnauthorizedResourceAccessException 指定されたユーザーが記事の所有者でない場合にスローされます。
+   */
+  @Transactional
+  public void delete(long loggedInUserId, Long articleId) {
+    // 指定された記事を取得、存在しない場合は例外をスロー
+    var entity = findById(articleId)
+        .orElseThrow(ResourceNotFoundException::new);
+
+    // ログイン中のユーザーが記事の所有者でない場合は例外をスロー
+    if (entity.getAuthor().getId() != loggedInUserId) {
+      throw new UnauthorizedResourceAccessException();
+    }
+
+    // 検証に成功した場合、記事を削除します。
+    articleRepository.delete(entity);
+  }
 }
