@@ -8,6 +8,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.blog.security.LoggedInUser;
@@ -190,4 +191,69 @@ class ArticleRestControllerDeleteArticleTest {
     ;
   }
 
+  /**
+   * DELETE /articles/{articleId}: 未ログイン状態で記事削除リクエストを送信した場合、 401 Unauthorized を返すことを検証するテストです。
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     <strong>Arrange:</strong>
+   *     <ul>
+   *       <li>削除対象の記事のID (existingArticle.getId()) は、事前にセットアップ済みです。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     <strong>Act:</strong>
+   *     <ul>
+   *       <li>
+   *         認証情報を付与せず、CSRFトークンのみを含むDELETEリクエストを送信することで、未ログイン状態をシミュレートします。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     <strong>Assert:</strong>
+   *     <ul>
+   *       <li>
+   *         サーバーがHTTPステータス 401 Unauthorized を返すこと。
+   *       </li>
+   *       <li>
+   *         レスポンスのContent-TypeがRFC7807に準拠した <code>application/problem+json</code> であること。
+   *       </li>
+   *       <li>
+   *         レスポンスボディに、エラーの詳細情報（title, status, detail, instance）が正しく設定されていること。
+   *       </li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   *
+   * @throws Exception テスト実行中に例外が発生した場合
+   */
+  @Test
+  @DisplayName("DELETE /articles/{articleId}: 未ログインのとき、401 Unauthorized を返す")
+  void deleteArticle_401Unauthorized() throws Exception {
+    // ## Arrange ##
+
+    // ## Act ##
+    // 認証情報を含めずに、CSRFトークンのみ付与したDELETEリクエストを送信することで、未ログイン状態を再現
+    var actual = mockMvc.perform(
+        delete("/articles/{articleId}", existingArticle.getId())
+            .with(csrf()) // CSRF トークンは付与するが、認証情報は設定しない
+            // .with(user(loggedInAuthor)) // 認証ユーザーを設定しない（未ログイン状態）
+            .contentType(MediaType.APPLICATION_JSON)
+    );
+
+    // ## Assert ##
+    // 送信したリクエストに対して、以下の内容を検証します：
+    // ・HTTPステータスが401 Unauthorizedであること
+    // ・レスポンスのContent-Typeが application/problem+json であること
+    // ・レスポンスボディ内に、エラータイトル、ステータス、詳細メッセージ、リクエストURIが正しく設定されていること
+    actual
+        .andExpect(status().isUnauthorized())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Unauthorized"))
+        .andExpect(jsonPath("$.status").value(401))
+        .andExpect(jsonPath("$.detail").value("リクエストを実行するにはログインが必要です"))
+        .andExpect(jsonPath("$.instance").value("/articles/" + existingArticle.getId()))
+    ;
+  }
 }
