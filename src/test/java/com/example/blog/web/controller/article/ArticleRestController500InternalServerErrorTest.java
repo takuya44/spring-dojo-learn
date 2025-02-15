@@ -2,9 +2,11 @@ package com.example.blog.web.controller.article;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.aMapWithSize;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -236,6 +238,94 @@ public class ArticleRestController500InternalServerErrorTest {
 
     // ## Assert ##
     // レスポンスが 500 Internal Server Error であること、およびレスポンスボディの内容を検証する
+    actual
+        .andExpect(status().isInternalServerError())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Internal Server Error"))
+        .andExpect(jsonPath("$.status").value(500))
+        .andExpect(jsonPath("$.detail").isEmpty())
+        .andExpect(jsonPath("$.instance").value("/articles/" + articleId))
+        .andExpect(jsonPath("$", aMapWithSize(4)));
+  }
+
+  /**
+   * DELETE /articles: 500 InternalServerError で stacktrace が露出しないことを検証するテストです。
+   *
+   * <p>このテストでは、以下の点を確認します:</p>
+   * <ul>
+   *   <li>
+   *     サービス層で RuntimeException が発生した場合、コントローラーが 500 Internal Server Error を返すこと。
+   *   </li>
+   *   <li>
+   *     レスポンスの Content-Type が RFC7807 に準拠した <code>application/problem+json</code> であること。
+   *   </li>
+   *   <li>
+   *     レスポンスボディ内に、スタックトレースなど内部情報が露出していない（detail が空で、返されるキーが4つのみ）こと。
+   *   </li>
+   *   <li>
+   *     レスポンスの instance プロパティがリクエスト URI を正しく示していること。
+   *   </li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange:
+   *     <ul>
+   *       <li>テスト用のパラメータ（articleId と userId）を定義します。</li>
+   *       <li>
+   *         mockBean の articleService の delete メソッド呼び出し時に RuntimeException をスローするように設定し、
+   *         内部エラー発生時の挙動をシミュレートします。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Act:
+   *     <ul>
+   *       <li>
+   *         CSRF トークンと認証情報（LoggedInUser）を付与した DELETE リクエストを送信します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Assert:
+   *     <ul>
+   *       <li>
+   *         サーバーが 500 Internal Server Error を返し、レスポンスの Content-Type が <code>application/problem+json</code> であることを検証します。
+   *       </li>
+   *       <li>
+   *         レスポンスボディのエラー情報において、title が "Internal Server Error"、status が 500、detail が空、
+   *         instance が正しいリクエストURI になっており、返されるキーが4つのみであることを確認します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   *
+   * @throws Exception テスト実行中に例外が発生した場合
+   */
+  @Test
+  @DisplayName("DELETE /articles: 500 InternalServerError で stacktrace が露出しない")
+  void deleteArticle_500() throws Exception {
+    // ## Arrange ##
+    // テスト用のパラメータを定義: mockBeanなので実際の動きができないなで必須の入力値のみ用意
+    var articleId = 9999L;    // テスト対象の記事ID
+    var userId = 999L;        // テスト用のユーザーID
+
+    // articleService.delete が呼ばれた際、RuntimeException をスローするように設定します。
+    // これにより、内部エラーが発生した場合のレスポンスをシミュレートします。
+    doThrow(RuntimeException.class)
+        .when(articleService).delete(userId, articleId);
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        delete("/articles/{articleId}", articleId)
+            .with(csrf())
+            .with(user(new LoggedInUser(userId, "test_username", "", true)))
+            .contentType(MediaType.APPLICATION_JSON)
+    );
+
+    // ## Assert ##
+    // レスポンスが 500 Internal Server Error であり、レスポンスボディの内容が期待通り（内部情報が漏れていない）であることを検証します。
     actual
         .andExpect(status().isInternalServerError())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
