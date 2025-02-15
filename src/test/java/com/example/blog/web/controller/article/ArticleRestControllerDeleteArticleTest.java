@@ -256,4 +256,75 @@ class ArticleRestControllerDeleteArticleTest {
         .andExpect(jsonPath("$.instance").value("/articles/" + existingArticle.getId()))
     ;
   }
+
+  /**
+   * DELETE /articles/{articleId}: 自分が作成した記事以外の記事を削除しようとした場合に、403 Forbidden を返すことを検証するテストです。
+   *
+   * <p>このテストでは、以下の点を確認します:</p>
+   * <ul>
+   *   <li>記事作成者は @BeforeEach により既に登録・作成されており、その記事に対して別ユーザーが削除リクエストを送信する。</li>
+   *   <li>リクエスト送信時に、CSRF トークンが付与されているが、認証ユーザーとしては別のユーザー (otherUser) が設定されている。</li>
+   *   <li>削除リクエストに対して、サーバーが 403 Forbidden を返すこと。</li>
+   *   <li>レスポンスの Content-Type が RFC 7807 に準拠した <code>application/problem+json</code> であること。</li>
+   *   <li>レスポンスボディ内に、エラータイトルが "Forbidden"、ステータスが 403、詳細メッセージが "リソースへのアクセスが拒否されました"、
+   *       リクエスト URI が正しく設定されていることが検証される。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange:
+   *     <ul>
+   *       <li>@BeforeEach で設定された記事作成者による記事 (existingArticle) が存在する。</li>
+   *       <li>別のユーザー (otherUser) を登録し、そのユーザー情報を基に LoggedInUser オブジェクトを生成する。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Act:
+   *     <ul>
+   *       <li>DELETE リクエストを送信し、認証情報に otherUser を設定することで、作成者以外のユーザーからの削除リクエストをシミュレートする。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Assert:
+   *     <ul>
+   *       <li>HTTP ステータスが 403 Forbidden であることを検証する。</li>
+   *       <li>レスポンスの Content-Type が <code>application/problem+json</code> であることを検証する。</li>
+   *       <li>レスポンスボディ内のエラー情報 (title, status, detail, instance) が期待通りであることを検証する。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   *
+   * @throws Exception テスト実行中に例外が発生した場合
+   */
+  @Test
+  @DisplayName("DELETE /articles/{articleId}: 自分が作成した記事以外の記事を編削除しようとしたとき、403を返す")
+  void updateArticle_403Forbidden_authorId() throws Exception {
+    // ## Arrange ##
+    // @BeforeEachで定義済みの作成者による記事が既に存在します。
+    // 別のログインユーザー (otherUser) を登録し、そのユーザー情報から LoggedInUser オブジェクトを生成する。
+    var otherUser = userService.register("test_username2", "test_password2");
+    var loggedInOtherUser = new LoggedInUser(otherUser.getId(), otherUser.getUsername(),
+        otherUser.getPassword(), true);
+
+    // ## Act ##
+    // DELETE リクエストを送信。CSRF トークンは付与するが、認証ユーザーは otherUser として設定することで、作成者以外からのリクエストをシミュレートする。
+    var actual = mockMvc.perform(
+        delete("/articles/{articleId}", existingArticle.getId())
+            .with(csrf()) // CSRF トークンを追加
+            .with(user(loggedInOtherUser)) // 別のログインユーザーを設定
+            .contentType(MediaType.APPLICATION_JSON)
+    );
+
+    // ## Assert ##
+    // サーバーが 403 Forbidden を返し、レスポンスが正しい問題詳細フォーマット (application/problem+json) であることを検証する。
+    actual
+        .andExpect(status().isForbidden()) // ステータスコードが 403 であることを確認
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Forbidden"))
+        .andExpect(jsonPath("$.status").value(403))
+        .andExpect(jsonPath("$.detail").value("リソースへのアクセスが拒否されました"))
+        .andExpect(jsonPath("$.instance").value("/articles/" + existingArticle.getId()))
+    ;
+  }
 }
