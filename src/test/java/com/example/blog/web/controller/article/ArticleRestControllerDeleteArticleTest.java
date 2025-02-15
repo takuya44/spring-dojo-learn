@@ -388,4 +388,66 @@ class ArticleRestControllerDeleteArticleTest {
         .andExpect(jsonPath("$.instance").value("/articles/" + existingArticle.getId()))
     ;
   }
+
+  /**
+   * DELETE /articles/{articleId}: 指定されたIDの記事が存在しない場合に、404 Not Found を返すことを検証するテストです。
+   *
+   * <p>このテストでは、以下の点を確認します:</p>
+   * <ul>
+   *   <li>無効な記事ID（存在しないID）を指定した場合、サーバーが404 Not Found のステータスコードを返す。</li>
+   *   <li>レスポンスの Content-Type が RFC7807 に準拠した <code>application/problem+json</code> である。</li>
+   *   <li>レスポンスボディに含まれるエラー情報が、タイトル "NotFound"、ステータス 404、詳細メッセージ "リソースが見つかりません"、およびリクエストURI（instance）と一致している。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange:
+   *     <ul>
+   *       <li>無効な記事ID（ここでは 0）を設定します。前提として、データベースには他に3件のデータが存在している状態です。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Act:
+   *     <ul>
+   *       <li>CSRF トークンおよび認証済みユーザー情報（loggedInAuthor）を付与した DELETE リクエストを送信します。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Assert:
+   *     <ul>
+   *       <li>HTTP ステータスが404 Not Found であることを検証します。</li>
+   *       <li>レスポンスの Content-Type が <code>application/problem+json</code> であることを検証します。</li>
+   *       <li>レスポンスボディ内のエラー情報が、期待される内容（"NotFound", 404, "リソースが見つかりません", インスタンスURI）と一致していることを確認します。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   *
+   * @throws Exception テスト実行中に例外が発生した場合
+   */
+  @Test
+  @DisplayName("DELETE /articles/{articleId}: 指定されたIDの記事が存在しないとき、404を返す")
+  void deleteArticle_404NotFound() throws Exception {
+    // ## Arrange ## 前提：DBに３件データある
+    var invalidArticleId = 0;
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        delete("/articles/{articleId}", invalidArticleId)
+            .with(csrf())
+            .with(user(loggedInAuthor)) // 認証されたユーザーを設定
+            .contentType(MediaType.APPLICATION_JSON)
+    );
+
+    // ## Assert ##
+    // サーバーが404 Not Found を返し、レスポンスボディに正しいエラー情報が含まれていることを検証します。
+    actual
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("NotFound"))
+        .andExpect(jsonPath("$.status").value(404))
+        .andExpect(jsonPath("$.detail").value("リソースが見つかりません"))
+        .andExpect(jsonPath("$.instance").value("/articles/" + invalidArticleId))
+    ;
+  }
 }
