@@ -327,4 +327,65 @@ class ArticleRestControllerDeleteArticleTest {
         .andExpect(jsonPath("$.instance").value("/articles/" + existingArticle.getId()))
     ;
   }
+
+  /**
+   * DELETE /articles/{articleId}: リクエストに CSRF トークンが付加されていない場合、 サーバーが 403 Forbidden
+   * を返すことを検証するテストです。
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange:
+   *     <ul>
+   *       <li>削除対象の記事 (existingArticle) と認証済みユーザー (loggedInAuthor) は事前にセットアップ済み。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Act:
+   *     <ul>
+   *       <li>
+   *         CSRF トークンを付与せずに DELETE リクエストを送信することで、CSRF 保護が働く状態をシミュレートします。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Assert:
+   *     <ul>
+   *       <li>HTTP ステータスが 403 Forbidden であること。</li>
+   *       <li>レスポンスの Content-Type が <code>application/problem+json</code> であること。</li>
+   *       <li>
+   *         レスポンスボディに、エラー情報が正しく設定されていること（タイトルが "Forbidden"、ステータスが 403、
+   *         詳細メッセージが "CSRFトークンが不正です"、instance が削除対象の記事の URI になっている）。
+   *       </li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   *
+   * @throws Exception テスト実行中に例外が発生した場合
+   */
+  @Test
+  @DisplayName("DELETE /articles/{articleId}: リクエストに CSRF トークンが付加されていないとき 403 Forbidden を返す")
+  void deleteArticle_403Forbidden_csrf() throws Exception {
+    // ## Arrange ##
+
+    // ## Act ##
+    // 認証済みユーザーとしてリクエストを送信するが、CSRF トークンは付与しないため、未許可状態が発生します。
+    var actual = mockMvc.perform(
+        delete("/articles/{articleId}", existingArticle.getId())
+            // .with(csrf()) // CSRF トークンを付与しないことで、セキュリティフィルターが403を返す
+            .with(user(loggedInAuthor))
+            .contentType(MediaType.APPLICATION_JSON)
+    );
+
+    // ## Assert ##
+    // サーバーが 403 Forbidden を返し、レスポンスボディに期待されるエラー情報が含まれていることを検証します。
+    actual
+        .andExpect(status().isForbidden())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Forbidden"))
+        .andExpect(jsonPath("$.status").value(403))
+        .andExpect(jsonPath("$.detail").value("CSRFトークンが不正です"))
+        .andExpect(jsonPath("$.instance").value("/articles/" + existingArticle.getId()))
+    ;
+  }
 }
