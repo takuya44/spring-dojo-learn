@@ -394,4 +394,68 @@ class ArticleServiceTest {
       cut.update(existingArticle.getId(), otherUser.getId(), "updated_title", "updated_body");
     });
   }
+
+  /**
+   * delete_success: 記事の削除に成功することを検証するテストです。
+   *
+   * <p>このテストでは、以下の点を検証します:</p>
+   * <ul>
+   *   <li>ユーザーが作成した記事が、削除処理によってデータベースから確実に削除されること。</li>
+   *   <li>削除後、データベースから該当記事を取得しようとすると、空の結果 (Optional.empty()) が返されること。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange:
+   *     <ul>
+   *       <li>テスト用の日時を固定するため、mockDateTimeService に期待の日時を返すよう設定します。</li>
+   *       <li>テスト用のユーザー (author) を生成し、データベースに登録します。</li>
+   *       <li>author を用いて記事 (existingArticle) を作成し、データベースに登録します。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Act:
+   *     <ul>
+   *       <li>サービス層の delete メソッドを呼び出し、author の ID と existingArticle の ID を引数として記事削除処理を実行します。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Assert:
+   *     <ul>
+   *       <li>記事削除後、articleRepository を用いて対象の記事を取得し、結果が空であることを確認します。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   */
+  @Test
+  @DisplayName("delete: 記事の削除に成功する")
+  void delete_success() {
+    // ## Arrange ##
+    // テスト用日時を固定：記事削除処理時に使用する日時をモックで設定
+    when(mockDateTimeService.now())
+        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20));
+
+    // ユーザー情報を生成し、データベースに登録する
+    var author = new UserEntity();
+    author.setUsername("test_user1");     // ユーザー名の設定
+    author.setPassword("test_password1"); // パスワードの設定
+    author.setEnabled(true);              // ユーザーが有効であることを示す
+    userRepository.insert(author);        // ユーザーをデータベースに登録
+
+    // 作成済みの記事を生成します。ここでは、上記で登録したユーザーが作者となります。
+    var existingArticle = cut.create(author.getId(), "test_article_title",
+        "test_article_body");
+
+    // ## Act ##
+    // サービス層の delete メソッドを呼び出し、記事の削除処理を実行する
+    // 引数として、ユーザーID (author.getId()) と記事ID (existingArticle.getId()) を指定する
+    cut.delete(author.getId(), existingArticle.getId());
+
+    // ## Assert ##
+    // データベースから削除対象の記事を取得しようとする
+    // 取得結果が空 (Optional.empty()) であれば、記事が正常に削除されたことを確認できる
+    var actual = articleRepository.selectById(existingArticle.getId());
+    assertThat(actual).isEmpty();
+  }
 }
