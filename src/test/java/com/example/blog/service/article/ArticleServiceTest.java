@@ -458,4 +458,64 @@ class ArticleServiceTest {
     var actual = articleRepository.selectById(existingArticle.getId());
     assertThat(actual).isEmpty();
   }
+
+  /**
+   * delete: 指定された ID の記事が見つからないとき、ResourceNotFoundException を throw することを検証するテストです。
+   *
+   * <p>このテストでは、以下の点を検証します:</p>
+   * <ul>
+   *   <li>
+   *     存在しない記事 ID を指定した場合、サービス層の delete メソッドが ResourceNotFoundException をスローすること。
+   *   </li>
+   *   <li>
+   *     テスト用のユーザー情報が正しくデータベースに登録され、削除処理が試みられる前提条件が整っていること。
+   *   </li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange:
+   *     <ul>
+   *       <li>
+   *         存在しない記事 ID として 0L を定義します。
+   *       </li>
+   *       <li>
+   *         テスト用のユーザー (expectedUser) を生成し、必要な情報（ユーザー名、パスワード、アクティブ状態）を設定後、
+   *         データベースに登録します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Act & Assert:
+   *     <ul>
+   *       <li>
+   *         存在しない記事 ID を指定して delete() メソッドを呼び出し、ResourceNotFoundException がスローされることを
+   *         assertThrows を用いて検証します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   */
+  @Test
+  @DisplayName("delete: 指定された ID の記事が見つからないとき、ResourceNotFoundException を throw する")
+  void delete_throwResourceNotFoundException() {
+    // ## Arrange ##
+    // 存在しない記事 ID を定義します。ここでは 0L を使用しています。
+    var invalidArticleId = 0L;
+
+    // ユーザー情報を準備してデータベースに挿入
+    var expectedUser = new UserEntity();
+    expectedUser.setUsername("test_user");     // ユーザー名を設定
+    expectedUser.setPassword("test_password"); // パスワードを設定
+    expectedUser.setEnabled(true);             // 有効なユーザーであることを示す
+    userRepository.insert(expectedUser);       // ユーザーをデータベースに挿入
+
+    // ## Act & Assert ##
+    // 存在しない記事 ID を指定して delete() メソッドを呼び出し、
+    // ResourceNotFoundException がスローされることを assertThrows により検証します。
+    assertThrows(ResourceNotFoundException.class, () -> {
+      cut.delete(expectedUser.getId(), invalidArticleId);
+    });
+  }
 }
