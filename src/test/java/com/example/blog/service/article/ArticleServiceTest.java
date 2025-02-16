@@ -518,4 +518,82 @@ class ArticleServiceTest {
       cut.delete(expectedUser.getId(), invalidArticleId);
     });
   }
+
+  /**
+   * delete: 他人の記事を削除しようとしたとき、UnauthorizedResourceAccessException を throw することを検証するテストです。
+   *
+   * <p>このテストでは、以下の点を検証します:</p>
+   * <ul>
+   *   <li>
+   *     作成者とは異なるユーザーが記事の削除を試みた場合、削除処理が UnauthorizedResourceAccessException をスローすること。
+   *   </li>
+   *   <li>
+   *     記事の作成者 (author) および削除対象の記事 (existingArticle) が正しく設定され、削除を試みる別のユーザー (otherUser) が
+   *     適切にデータベースに登録されていること。
+   *   </li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange:
+   *     <ul>
+   *       <li>
+   *         モックされた日付サービス (mockDateTimeService) で期待する日時を設定し、記事の作成時刻を固定します。
+   *       </li>
+   *       <li>
+   *         作成者ユーザー (author) を生成し、必要な情報（ユーザー名、パスワード、有効フラグ）を設定後、データベースに登録します。
+   *       </li>
+   *       <li>
+   *         作成者ユーザーを用いて記事 (existingArticle) を生成・登録します。
+   *       </li>
+   *       <li>
+   *         削除を試みるため、作成者とは異なるユーザー (otherUser) を生成し、データベースに登録します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Act & Assert:
+   *     <ul>
+   *       <li>
+   *         作成者ではないユーザー (otherUser) の ID を指定して、記事削除処理 (cut.delete) を実行し、
+   *         UnauthorizedResourceAccessException がスローされることを assertThrows で検証します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   *
+   * @throws Exception テスト実行中に例外が発生した場合
+   */
+  @Test
+  @DisplayName("delete: 他人の記事を削除しようとしたとき UnauthorizedResourceAccessException を throw する")
+  void delete_throwUnauthorizedResourceAccessException() {
+    // ## Arrange ##
+    when(mockDateTimeService.now())
+        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20));
+
+    // 作成者ユーザーを生成し、必要な情報を設定した上でデータベースに登録します。
+    var author = new UserEntity();
+    author.setUsername("test_user");     // 作成者のユーザー名を設定
+    author.setPassword("test_password"); // パスワードを設定
+    author.setEnabled(true);             // 有効なユーザーであることを示す
+    userRepository.insert(author);       // データベースに作成者ユーザーを挿入
+
+    // 作成者ユーザーを用いて記事を作成します。
+    var existingArticle = cut.create(author.getId(), "test_title", "test_body");
+
+    // 更新を試みる別のユーザーを生成し、データベースに登録します。
+    var otherUser = new UserEntity();
+    otherUser.setUsername("other_user");     // 別のユーザー名を設定
+    otherUser.setPassword("other_password"); // 別のパスワードを設定
+    otherUser.setEnabled(true);              // ユーザーが有効であることを示す
+    userRepository.insert(otherUser);        // データベースに別のユーザーを挿入
+
+    // ## Act & Assert ##
+    // 存在する記事に対し、作成者とは異なるユーザー (otherUser) の ID を指定して削除処理を実行し、
+    // UnauthorizedResourceAccessException が throw されることを検証します。
+    assertThrows(UnauthorizedResourceAccessException.class, () -> {
+      cut.delete(otherUser.getId(), existingArticle.getId());
+    });
+  }
 }
