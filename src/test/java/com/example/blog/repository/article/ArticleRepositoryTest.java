@@ -571,4 +571,69 @@ class ArticleRepositoryTest {
           .isEqualTo(articleToCreate);
     });
   }
+
+  /**
+   * delete: 指定された ID の記事を削除することを検証するテストです。
+   *
+   * <p>このテストでは、以下の点を確認します:</p>
+   * <ul>
+   *   <li>ユーザーが作成した記事が、削除処理によりデータベースから完全に削除されること。</li>
+   *   <li>削除後、該当の記事がデータベースに存在しないことを確認する。</li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange:
+   *     <ul>
+   *       <li>テスト用ユーザー (author) を生成し、データベースに登録します。</li>
+   *       <li>author を使用して、初期状態の記事 (existingArticle) を生成し、データベースに登録します。
+   *           ※ 作成時の日時は createAt と updateAt が同一です。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Act:
+   *     <ul>
+   *       <li>サービス層の delete メソッドを呼び出して、existingArticle を削除します。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Assert:
+   *     <ul>
+   *       <li>データベースから削除対象の記事を取得し、結果が空 (Optional.empty()) であることを検証します。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   */
+  @Test
+  @DisplayName("delete: 指定された ID の記事を削除する")
+  void delete_success() {
+    // ## Arrange ##
+    // テスト用ユーザーを生成（ID は自動生成されるため null で初期化）
+    var author = new UserEntity(null, "test_username", "test_password", true);
+    // ユーザーをデータベースに登録
+    userRepository.insert(author);
+
+    // 初期状態の記事を生成
+    // ここでは、author を作成者とし、作成日時と更新日時は同一の値を設定しています。
+    var existingArticle = new ArticleEntity(
+        null,
+        "test_title",
+        "test_body",
+        author,
+        TestDateTimeUtil.of(2020, 1, 1, 10, 30),
+        TestDateTimeUtil.of(2020, 1, 1, 10, 30) // 記事を新規作成したため、createAt = updateAt
+    );
+    // 作成した記事をデータベースに登録
+    cut.insert(existingArticle);
+
+    // ## Act ##
+    // リポジトリ層の delete メソッドを呼び出して、指定された記事 (existingArticle) を削除します。
+    cut.delete(existingArticle);
+
+    // ## Assert ##
+    // データベースから削除対象の記事を取得し、結果が空 (Optional.empty()) であることを検証します。
+    var actual = cut.selectById(existingArticle.getId());
+    assertThat(actual).isEmpty();
+  }
 }
