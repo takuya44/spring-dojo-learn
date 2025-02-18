@@ -724,4 +724,100 @@ class ArticleRepositoryTest {
           .isEqualTo(existingArticle);
     });
   }
+
+  /**
+   * delete: 著者以外のユーザーIDが指定されているとき、削除しないことを検証するテストです。
+   *
+   * <p>このテストでは、以下の点を確認します:</p>
+   * <ul>
+   *   <li>
+   *     記事は著者 (author) によって作成されているが、削除操作の際に削除者として別のユーザー (otherUser) の情報が渡された場合、
+   *     削除処理が行われず元の記事が保持されること。
+   *   </li>
+   *   <li>
+   *     データベースから記事を取得した際、元の記事 (existingArticle) の状態が変わらないことを再帰的比較で検証します。
+   *   </li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange:
+   *     <ul>
+   *       <li>著者ユーザー (author) を生成し、データベースに登録します。</li>
+   *       <li>削除操作を試みるための別ユーザー (otherUser) を生成し、データベースに登録します。</li>
+   *       <li>
+   *         著者 (author) によって作成された記事 (existingArticle) を生成し、データベースに登録します。
+   *       </li>
+   *       <li>
+   *         削除対象として、existingArticle の情報を元に、削除実行者として otherUser を設定した ArticleEntity (articleToDelete)
+   *         を生成します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Act:
+   *     <ul>
+   *       <li>生成した articleToDelete を引数に delete メソッドを呼び出し、削除操作を試みます。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Assert:
+   *     <ul>
+   *       <li>データベースから元の記事 (existingArticle) を取得し、記事が削除されずそのまま保持されていることを確認します。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   */
+  @Test
+  @DisplayName("delete: 著者以外のユーザーIDが指定されているとき、削除しない")
+  void delete_invalidAuthorId() {
+    // ## Arrange ##
+    // 著者ユーザーを生成（ID は自動生成されるため null で初期化）
+    var author = new UserEntity(null, "test_username", "test_password", true);
+    // 著者ユーザーをデータベースに登録
+    userRepository.insert(author);
+
+    // 別のユーザーを生成（更新操作を試みるユーザーとして）
+    var otherUser = new UserEntity(null, "test_username1", "test_password1", true);
+    // 別ユーザーをデータベースに登録
+    userRepository.insert(otherUser);
+
+    // 初期状態の記事を生成
+    // 作成時には createdAt と updatedAt が同一の日時に設定される。
+    var existingArticle = new ArticleEntity(
+        null,
+        "test_title",
+        "test_body",
+        author,
+        TestDateTimeUtil.of(2020, 1, 1, 10, 30),
+        TestDateTimeUtil.of(2020, 1, 1, 10, 30)
+    );
+    // 作成した記事をデータベースに登録
+    cut.insert(existingArticle);
+
+    // 削除対象として、existingArticle の情報を元に、削除実行者として otherUser を設定した ArticleEntity を生成する。
+    var articleToDelete = new ArticleEntity(
+        existingArticle.getId(),
+        existingArticle.getTitle(),
+        existingArticle.getBody(),
+        otherUser, // 削除者として author ではなく otherUser を指定する
+        existingArticle.getCreatedAt(),
+        existingArticle.getUpdatedAt()
+    );
+
+    // ## Act ##
+    // articleToDelete を引数に delete メソッドを呼び出し、削除操作を試みる。
+    cut.delete(articleToDelete);
+
+    // ## Assert ##
+    // データベースから元の記事 (existingArticle) を取得し、削除されていないことを確認する。
+    var actual = cut.selectById(existingArticle.getId());
+    assertThat(actual).hasValueSatisfying(actualArticle -> {
+      assertThat(actualArticle)
+          .usingRecursiveComparison()
+          .ignoringFields("author.password")
+          .isEqualTo(existingArticle);
+    });
+  }
 }
