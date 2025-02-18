@@ -636,4 +636,43 @@ class ArticleRepositoryTest {
     var actual = cut.selectById(existingArticle.getId());
     assertThat(actual).isEmpty();
   }
+
+  @Test
+  @DisplayName("delete: 指定された記事IDが存在しないとき、削除しない")
+  void delete_invalidArticleId() {
+    // ## Arrange ##
+    var author = new UserEntity(null, "test_username", "test_password", true);
+    userRepository.insert(author);
+
+    var existingArticle = new ArticleEntity(
+        null,
+        "test_title",
+        "test_body",
+        author,
+        TestDateTimeUtil.of(2020, 1, 10, 10, 20),
+        TestDateTimeUtil.of(2020, 1, 10, 10, 20)
+    );
+    cut.insert(existingArticle);
+
+    var articleToDelete = new ArticleEntity(
+        0L, // invalid article id
+        existingArticle.getTitle(),
+        existingArticle.getBody(),
+        existingArticle.getAuthor(),
+        existingArticle.getCreatedAt(),
+        existingArticle.getUpdatedAt()
+    );
+
+    // ## Act ##
+    cut.delete(articleToDelete);
+
+    // ## Assert ##
+    var actual = cut.selectById(existingArticle.getId());
+    assertThat(actual).hasValueSatisfying(actualArticle -> {
+      assertThat(actualArticle)
+          .usingRecursiveComparison()
+          .ignoringFields("author.password")
+          .isEqualTo(existingArticle);
+    });
+  }
 }
