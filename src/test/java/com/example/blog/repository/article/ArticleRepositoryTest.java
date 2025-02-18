@@ -637,6 +637,53 @@ class ArticleRepositoryTest {
     assertThat(actual).isEmpty();
   }
 
+  /**
+   * delete: 指定された記事IDが存在しないとき、削除処理が行われず既存の記事が保持されることを検証するテストです。
+   *
+   * <p>このテストでは、以下の点を確認します:</p>
+   * <ul>
+   *   <li>
+   *     存在する記事はデータベースに登録されているが、削除処理の対象として無効な記事ID（0L）を持つ ArticleEntity を渡した場合、
+   *     既存の記事が削除されないこと。
+   *   </li>
+   *   <li>
+   *     削除処理後、元の記事情報がそのままデータベースに存在していることを確認する。
+   *   </li>
+   * </ul>
+   *
+   * <p>テストの流れ:</p>
+   * <ol>
+   *   <li>
+   *     Arrange:
+   *     <ul>
+   *       <li>テスト用ユーザー (author) を生成し、データベースに登録します。</li>
+   *       <li>author を使って初期状態の記事 (existingArticle) を作成し、データベースに登録します。</li>
+   *       <li>
+   *         削除対象として無効な記事ID (0L) を持つ ArticleEntity (articleToDelete) を生成します。
+   *         ここでは、タイトル、本文、作者、作成日時、更新日時は既存の記事と同じですが、記事IDだけが無効になっています。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Act:
+   *     <ul>
+   *       <li>
+   *         無効な記事IDを持つ ArticleEntity を引数として delete メソッドを呼び出し、削除処理を試みます。
+   *         この場合、存在しない記事IDのため、削除は行われないことが期待されます。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     Assert:
+   *     <ul>
+   *       <li>
+   *         データベースから既存の記事 (existingArticle) を取得し、元の状態と一致していることを再帰的比較で検証します。
+   *         ※ author.password はセキュリティ上比較対象から除外します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   */
   @Test
   @DisplayName("delete: 指定された記事IDが存在しないとき、削除しない")
   void delete_invalidArticleId() {
@@ -654,8 +701,9 @@ class ArticleRepositoryTest {
     );
     cut.insert(existingArticle);
 
+    // 無効な記事ID (0L) を持つ ArticleEntity を作成
     var articleToDelete = new ArticleEntity(
-        0L, // invalid article id
+        0L, // 無効な記事ID
         existingArticle.getTitle(),
         existingArticle.getBody(),
         existingArticle.getAuthor(),
@@ -664,6 +712,7 @@ class ArticleRepositoryTest {
     );
 
     // ## Act ##
+    // 無効な記事IDを持つ ArticleEntity を渡して delete メソッドを呼び出す（削除は行われないはず）
     cut.delete(articleToDelete);
 
     // ## Assert ##
