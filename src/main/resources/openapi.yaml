@@ -14,6 +14,8 @@ tags:
     description: ログイン・ログアウトの API
   - name: articles
     description: 記事情報の API
+  - name: article-comments
+    description: ブログ記事のコメント関連の API
 paths:
   # GET /csrf-cookie
   /csrf-cookie:
@@ -263,6 +265,52 @@ paths:
           $ref: "#/components/responses/NotFoundResponse"
         '500':
           $ref: "#/components/responses/InternalServerErrorResponse"
+  # POST /comments
+  /articles/{articleId}/comments:
+    post:
+      tags: [ article-comments ]
+      operationId: createComment
+      summary: 記事のコメントを作成します
+      description: 指定した記事に対するコメントをログインユーザーで作成します
+      parameters:
+        - name: articleId
+          in: path
+          description: 記事のID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleCommentForm"
+      security:
+        - cookieAuth: [ ]
+        - csrfProtectionHeader: [ ]
+        - csrfProtectionCookie: [ ]
+      responses:
+        '201':
+          description: Created
+          headers:
+            Location:
+              description: 作成された記事のURI
+              schema:
+                type: string
+                example: "/articles/123"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleCommentDTO"
+        '400':
+          $ref: "#/components/responses/BadRequestResponse"
+        '401':
+          $ref: "#/components/responses/UnauthorizedResponse"
+        '403':
+          $ref: "#/components/responses/ForbiddenResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerErrorResponse"
 components:
   schemas:
     # 500エラー
@@ -413,6 +461,15 @@ components:
         body:
           description: ブログ記事の本文
           type: string
+    # エンドポイントへの入力
+    ArticleCommentForm:
+      type: object
+      required:
+        - body
+      properties:
+        body:
+          description: ブログ記事へのコメントの本文
+          type: string
     # 出力
     UserDTO:
       type: object
@@ -466,6 +523,20 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ArticleListItemDTO"
+    # 出力
+    ArticleCommentDTO:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        body:
+          type: string
+        author:
+          $ref: "#/components/schemas/UserDTO"
+        createdAt:
+          type: string
+          format: date-time
   responses:
     InternalServerErrorResponse:
       description: Internal Server Error
