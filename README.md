@@ -59,17 +59,40 @@ Spring Boot アプリケーションを起動します。
 http://localhost:8080
 ```
 
-### **主要なエンドポイント一覧**
+# 主要なエンドポイント一覧
 
-| メソッド   | URL           | 説明         |
-|--------|---------------|------------|
-| GET    | `/posts`      | 全ての記事を取得   |
-| POST   | `/posts`      | 新しい記事を作成   |
-| GET    | `/posts/{id}` | 指定された記事を取得 |
-| PUT    | `/posts/{id}` | 記事を更新      |
-| DELETE | `/posts/{id}` | 記事を削除      |
+| メソッド   | URL                            | 説明             |
+|--------|--------------------------------|----------------|
+| GET    | /csrf-cookie                   | CSRF Cookieの取得 |
+| POST   | /login                         | ログイン           |
+| POST   | /logout                        | ログアウト          |
+| POST   | /users                         | ユーザーを登録        |
+| GET    | /articles                      | 記事の一覧を取得       |
+| POST   | /articles                      | 新しい記事を作成       |
+| GET    | /articles/{articleId}          | 指定された記事の詳細を取得  |
+| PUT    | /articles/{articleId}          | 記事を更新          |
+| DELETE | /articles/{articleId}          | 記事を削除          |
+| POST   | /articles/{articleId}/comments | 記事にコメントを作成     |
 
----
+## CSRF 保護について
+
+- CSRF保護のため、POST/PUT/DELETEリクエストを行う前に `/csrf-cookie` からCSRFトークンを取得する必要があります
+- 取得したXSRF-TOKENの値をX-XSRF-TOKENヘッダーに設定してリクエストを送信してください
+- XSRF-TOKENは複数のリクエストで再利用可能です
+
+## 認証が必要なエンドポイント
+
+以下のエンドポイントではログインが必要です：
+
+- `/logout`
+- `/articles` (POST)
+- `/articles/{articleId}` (PUT/DELETE)
+- `/articles/{articleId}/comments` (POST)
+
+## レスポンス形式
+
+- 正常系: JSONオブジェクト
+- エラー系: 適切なHTTPステータスコードとエラーメッセージ
 
 ## **データベース設定**
 
