@@ -267,6 +267,25 @@ public class ArticleRestController implements ArticlesApi {
         .build();
   }
 
+  /**
+   * 指定された記事に新しいコメントを作成する。
+   *
+   * <p>このメソッドは、認証済みのユーザーによるコメント投稿を処理し、
+   * 作成されたコメントの詳細情報を返します。</p>
+   *
+   * <p>処理の流れ:</p>
+   * <ul>
+   *   <li>認証情報を取得し、現在のユーザーを特定する。</li>
+   *   <li>記事に紐づく新しいコメントを作成する。</li>
+   *   <li>作成されたコメントのデータを DTO に変換する。</li>
+   *   <li>レスポンスの Location ヘッダーに作成されたコメントの URI を設定する。</li>
+   *   <li>HTTP 201 Created ステータスと共にレスポンスを返す。</li>
+   * </ul>
+   *
+   * @param articleId コメントを追加する記事の ID
+   * @param form      コメントの内容を含むリクエストデータ
+   * @return 作成されたコメントの詳細情報を含むレスポンス
+   */
   @Override
   public ResponseEntity<ArticleCommentDTO> createComment(
       Long articleId,
@@ -278,13 +297,14 @@ public class ArticleRestController implements ArticlesApi {
         .getAuthentication() // 認証情報を取得
         .getPrincipal(); // 現在ログインしているユーザーの情報を取得
 
-    // ## 2.  ##
+    // ## 2. 記事に対する新しいコメントを作成 ##
     var newComment = articleCommentService.create(
-        loggedInUser.getUserId(),
-        articleId,
-        form.getBody()
+        loggedInUser.getUserId(), // コメントの投稿者 ID
+        articleId,                // コメントを追加する記事の ID
+        form.getBody()            // コメントの本文
     );
 
+    // ## 3. 作成されたコメントのデータを DTO に変換 ##
     var body = ArticleCommentMapper.toArticleDTO(newComment);
 
     // ## 3. Location ヘッダーにリソース URI を設定 ##
@@ -293,7 +313,7 @@ public class ArticleRestController implements ArticlesApi {
         .buildAndExpand(articleId, newComment.getId())
         .toUri();
 
-    // ## 4. HTTP レスポンスを返す ##
+    // ## 5. HTTP 201 Created レスポンスを返す ##
     return ResponseEntity
         .created(location) // HTTP 201 Created ステータスと Location ヘッダーを設定
         .contentType(MediaType.APPLICATION_JSON)

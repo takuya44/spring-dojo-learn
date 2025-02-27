@@ -13,7 +13,7 @@ public class ArticleCommentService {
       long articleId,
       @NotNull String body
   ) {
-    // TODO :mock
+    // TODO: データベースへの保存処理を実装予定（現在はモックのエンティティを返す）
     return new ArticleCommentEntity(
         null,
         body,
