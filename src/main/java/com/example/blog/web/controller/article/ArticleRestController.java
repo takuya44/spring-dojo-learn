@@ -1,12 +1,15 @@
 package com.example.blog.web.controller.article;
 
 import com.example.blog.api.ArticlesApi;
+import com.example.blog.model.ArticleCommentDTO;
+import com.example.blog.model.ArticleCommentForm;
 import com.example.blog.model.ArticleDTO;
 import com.example.blog.model.ArticleForm;
 import com.example.blog.model.ArticleListDTO;
 import com.example.blog.model.ArticleListItemDTO;
 import com.example.blog.model.UserDTO;
 import com.example.blog.security.LoggedInUser;
+import com.example.blog.service.article.ArticleCommentService;
 import com.example.blog.service.article.ArticleService;
 import com.example.blog.service.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 public class ArticleRestController implements ArticlesApi {
 
   private final ArticleService articleService;
+  private final ArticleCommentService articleCommentService;
 
 //  /** 練習用で作成したので、一度削除した。自作したArticleDTOクラスも削除すること
 //   * 指定されたIDの記事を表示します。
@@ -261,5 +265,38 @@ public class ArticleRestController implements ArticlesApi {
     return ResponseEntity
         .noContent()
         .build();
+  }
+
+  @Override
+  public ResponseEntity<ArticleCommentDTO> createComment(
+      Long articleId,
+      ArticleCommentForm form
+  ) {
+    // ## 1. 認証情報から現在ログインしているユーザー情報を取得 ##
+    var loggedInUser = (LoggedInUser) SecurityContextHolder
+        .getContext() // セキュリティコンテキストを取得
+        .getAuthentication() // 認証情報を取得
+        .getPrincipal(); // 現在ログインしているユーザーの情報を取得
+
+    // ## 2.  ##
+    var newComment = articleCommentService.create(
+        loggedInUser.getUserId(),
+        articleId,
+        form.getBody()
+    );
+
+    var body = ArticleCommentMapper.toArticleDTO(newComment);
+
+    // ## 3. Location ヘッダーにリソース URI を設定 ##
+    var location = UriComponentsBuilder
+        .fromPath("/articles/{articleId}/comments/{commentId}")
+        .buildAndExpand(articleId, newComment.getId())
+        .toUri();
+
+    // ## 4. HTTP レスポンスを返す ##
+    return ResponseEntity
+        .created(location) // HTTP 201 Created ステータスと Location ヘッダーを設定
+        .contentType(MediaType.APPLICATION_JSON)
+        .body(body);
   }
 }
