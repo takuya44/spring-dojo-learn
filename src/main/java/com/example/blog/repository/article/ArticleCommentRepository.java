@@ -2,6 +2,7 @@ package com.example.blog.repository.article;
 
 import com.example.blog.service.article.ArticleCommentEntity;
 import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 
 /**
@@ -9,6 +10,7 @@ import org.apache.ibatis.annotations.Options;
  *
  * <p>このインターフェースでは、MyBatis を使用して記事コメントのデータを操作する。</p>
  */
+@Mapper
 public interface ArticleCommentRepository {
 
   /**

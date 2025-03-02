@@ -101,7 +101,7 @@ class ArticleCommentServiceTest {
         .usingRecursiveComparison()
         .ignoringFields("password")
         .isEqualTo(commentAuthor);
-    
+
     assertThat(actual.getCreatedAt()).isEqualTo(expectedCurrentDateTime);
   }
 }
