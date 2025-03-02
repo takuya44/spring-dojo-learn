@@ -46,7 +46,7 @@ public class ArticleCommentEntity {
   /**
    * コメントが紐づく記事のエンティティ
    */
-  private ArticleEntity articleEntity;
+  private ArticleEntity article;
 
   /**
    * コメントを作成したユーザーのエンティティ
