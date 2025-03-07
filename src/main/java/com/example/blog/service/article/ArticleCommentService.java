@@ -20,25 +20,30 @@ public class ArticleCommentService {
   private final DateTimeService dateTimeService;
 
   /**
-   * 記事にコメントを追加する。
+   * ユーザーが指定した記事にコメントを投稿するメソッドです。
    *
-   * <p>指定された記事 ID に対して、指定されたユーザーがコメントを投稿する処理を行う。</p>
+   * <p>
+   * このメソッドは、ユーザーID、記事ID、及び必須のコメント本文を受け取り、 新規コメントエンティティを生成してデータベースに保存します。<br>
+   * 保存後、DB側で自動生成されたIDやその他の付加情報を反映したエンティティを再取得し返却します。
+   * </p>
    *
-   * @param userId    コメントを投稿するユーザーのID
-   * @param articleId コメントを投稿する対象の記事ID
-   * @param body      コメントの内容（必須）
-   * @return 作成されたコメントのエンティティ
-   * @throws jakarta.validation.ConstraintViolationException body が null の場合にスローされる
+   * @param userId    コメント投稿者のユーザーID
+   * @param articleId 対象記事のID
+   * @param body      投稿するコメントの本文（null不可）
+   * @return データベースに保存されたコメントエンティティ
+   * @throws jakarta.validation.ConstraintViolationException {@code body} が null の場合に発生します
    */
   public ArticleCommentEntity create(
       long userId,
       long articleId,
       @NotNull String body
   ) {
-    // 新しいコメントのエンティティを作成
+    // --- 新規コメントエンティティの生成 ---
+    // 関連するArticleEntityおよびUserEntityは、IDのみを設定してインスタンス化
+    // これにより、リレーションを表現するための最小限の情報のみを渡す設計
     var newComment = new ArticleCommentEntity(
-        null, // ID はデータベースで自動生成
-        body, // コメント本文
+        null, // IDはDBで自動生成されるため、ここではnull
+        body, // コメント本文（ユーザーからの入力）
         new ArticleEntity(articleId, "", "", null, null, null),
         new UserEntity(userId, "", "", true),
         dateTimeService.now()
@@ -48,6 +53,8 @@ public class ArticleCommentService {
     articleCommentRepository.insert(newComment);
 
     // 作成したコメントを返却
-    return newComment;
+    return articleCommentRepository
+        .selectById(newComment.getId())
+        .orElseThrow(() -> new IllegalStateException("never reached"));
   }
 }
