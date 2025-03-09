@@ -108,4 +108,69 @@ class ArticleCommentRepositoryTest {
           .isEqualTo(expectedComment);
     });
   }
+
+  @Test
+  @DisplayName("selectById：指定した ID の記事コメントが存在するとき、記事コメントを返す")
+  void selectById_success() {
+    // ## Arrange ##
+    // 記事の著者となるユーザーエンティティを生成（IDはDB自動生成）
+    var articleAuthor = new UserEntity(
+        null, // IDは自動生成のためnull
+        "test_username1", // ユーザー名
+        "test_password1", // パスワード（テスト用）
+        true              // ユーザーが有効であることを示すフラグ
+    );
+    // ユーザー情報をデータベースに登録
+    userRepository.insert(articleAuthor);
+
+    // テスト用の記事エンティティを生成
+    var article = new ArticleEntity(
+        null,                                  // IDは自動生成
+        "test_title",                             // 記事のタイトル
+        "test_body",                              // 記事の本文
+        articleAuthor,                            // 記事の著者
+        TestDateTimeUtil.of(2020, 1, 1, 10, 30), // 記事の作成日時
+        TestDateTimeUtil.of(2021, 1, 1, 10, 30) // 記事の更新日時
+    );
+    // 記事情報をデータベースに登録
+    articleRepository.insert(article);
+
+    // コメント投稿者となる別のユーザーエンティティを生成
+    var commentAuthor = new UserEntity(
+        null,             // IDは自動生成
+        "test_username2",    // ユーザー名
+        "test_password2",    // パスワード
+        true                 // ユーザーが有効であることを示すフラグ
+    );
+    // コメント投稿者のユーザー情報をデータベースに登録
+    userRepository.insert(commentAuthor);
+
+    // 記事コメントエンティティを生成（IDは自動生成のためnull）
+    var expectedComment = new ArticleCommentEntity(
+        null,                                 // コメントIDはDB自動生成
+        "test_body",                             // コメントの本文
+        article,                                 // コメント対象の記事
+        commentAuthor,                           // コメント投稿者
+        TestDateTimeUtil.of(2022, 1, 1, 10, 31) // コメントの投稿日時
+    );
+
+    // 記事コメントエンティティをデータベースに挿入する
+    cut.insert(expectedComment);
+
+    // ## Act ##
+    var actualOpt = cut.selectById(expectedComment.getId());
+
+    // ## Assert ##
+    // 挿入した記事コメントエンティティをIDで取得し、期待値と一致するかを検証する
+    assertThat(actualOpt).hasValueSatisfying(actualEntity -> {
+      // 再帰的な比較を行い、パスワード情報は比較対象から除外して一致していることを確認
+      assertThat(actualEntity)
+          .usingRecursiveComparison()
+          .ignoringFields(
+              "author.password", // コメント投稿者のパスワードは比較対象外
+              "article.author.password"// 記事著者のパスワードも比較対象外
+          )
+          .isEqualTo(expectedComment);
+    });
+  }
 }
