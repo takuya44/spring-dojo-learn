@@ -135,11 +135,46 @@ class ArticleRestControllerCreateArticleCommentTest {
     ;
   }
 
+  /**
+   * POST /articles/{articleId}/comments エンドポイントのテストケースです。
+   *
+   * <p>
+   * このテストは、リクエストボディの "body" フィールドが空の場合に、サーバーが 400 BadRequest を返すことを検証します。
+   * </p>
+   *
+   * <ol>
+   *   <li>
+   *     <b>Arrange:</b>
+   *     <ul>
+   *       <li>記事作成者を登録し、テスト用の記事を作成します。</li>
+   *       <li>コメント作成者を登録し、認証情報として使用する {@code LoggedInUser} を作成します。</li>
+   *       <li>空の "body" フィールドを持つ JSON リクエストボディを定義します。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     <b>Act:</b>
+   *     <ul>
+   *       <li>POST リクエストを実行し、指定した記事に対して空の "body" でコメント作成を試みます。</li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     <b>Assert:</b>
+   *     <ul>
+   *       <li>レスポンスが 400 BadRequest であることを検証します。</li>
+   *       <li>レスポンスのコンテンツタイプが {@code MediaType.APPLICATION_PROBLEM_JSON} であることを確認します。</li>
+   *       <li>レスポンスの JSON 内に、エラーに関する詳細情報（title, status, detail, instance, errors）が含まれていることを検証します。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   *
+   * @throws Exception リクエスト実行中に発生する可能性のある例外
+   * @see ArticleCommentController
+   */
   @Test
   @DisplayName("POST /articles/{articleId}/comments: リクエストの body フィールドが空のとき、400 BadRequest")
   void createArticleComments_400BadRequest() throws Exception {
     // ## Arrange ##
-    // 記事の作成者を登録し、記事を作成
+    // 1. 記事作成者を登録し、テスト用の記事を作成する
     var articleAuthor = userService.register("test_username1", "test_password1");
     var article = articleService.create(
         articleAuthor.getId(),
@@ -147,7 +182,7 @@ class ArticleRestControllerCreateArticleCommentTest {
         "test_article_body"
     );
 
-    // コメントの作成者を登録し、認証情報を作成
+    // 2. コメント作成者を登録し、認証情報として使用する LoggedInUser を作成する
     var commentAuthor = userService.register("test_username2", "test_password2");
     var loggedInCommentAuthor = new LoggedInUser(
         commentAuthor.getId(),
@@ -156,6 +191,7 @@ class ArticleRestControllerCreateArticleCommentTest {
         commentAuthor.isEnabled()
     );
 
+    // 3. 空の "body" フィールドを含む JSON リクエストボディを定義する
     var bodyJson = """
         {
           "body": ""
@@ -163,6 +199,7 @@ class ArticleRestControllerCreateArticleCommentTest {
         """;
 
     // ## Act ##
+    // CSRF トークンと認証情報を付与して、指定した記事IDに対して POST リクエストを実行する
     var actual = mockMvc.perform(
         post("/articles/{articleId}/comments", article.getId())
             .with(csrf()) // CSRF トークンを含める
@@ -172,6 +209,7 @@ class ArticleRestControllerCreateArticleCommentTest {
     );
 
     // ## Assert ##
+    // レスポンスが 400 BadRequest であること、およびレスポンスの JSON 内容が期待通りのエラー情報を含むことを検証する
     actual
         .andExpect(status().isBadRequest())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
@@ -181,8 +219,8 @@ class ArticleRestControllerCreateArticleCommentTest {
         .andExpect(jsonPath("$.instance").value("/articles/%d/comments".formatted(article.getId())))
         .andExpect(jsonPath("$.errors", hasItem(
             allOf(
-                hasEntry("pointer", "#/body"), // "body" フィールドが原因であることを確認
-                hasEntry("detail", "コメント本文は必須です。")
+                hasEntry("pointer", "#/body"), // エラーの原因が "body" フィールドであることを確認
+                hasEntry("detail", "コメント本文は必須です。") // エラーメッセージが期待通りであることを確認
             )
         )))
     ;
