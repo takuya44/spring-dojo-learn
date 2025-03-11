@@ -470,6 +470,7 @@ components:
         body:
           description: ブログ記事へのコメントの本文
           type: string
+          minLength: 1
     # 出力
     UserDTO:
       type: object
