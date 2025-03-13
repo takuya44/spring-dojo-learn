@@ -14,8 +14,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.blog.security.LoggedInUser;
+import com.example.blog.service.article.ArticleEntity;
 import com.example.blog.service.article.ArticleService;
+import com.example.blog.service.user.UserEntity;
 import com.example.blog.service.user.UserService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,6 +52,30 @@ class ArticleRestControllerCreateArticleCommentTest {
   private UserService userService;
   @Autowired
   private ArticleService articleService;
+
+  private ArticleEntity article;
+  private UserEntity commentAuthor;
+  private LoggedInUser loggedInCommentAuthor;
+
+  @BeforeEach
+  void beforeEach() {
+    // 記事の作成者を登録し、記事を作成
+    var articleAuthor = userService.register("test_username1", "test_password1");
+    article = articleService.create(
+        articleAuthor.getId(),
+        "test_article_title",
+        "test_article_body"
+    );
+
+    // コメントの作成者を登録し、認証情報を作成
+    commentAuthor = userService.register("test_username2", "test_password2");
+    loggedInCommentAuthor = new LoggedInUser(
+        commentAuthor.getId(),
+        commentAuthor.getUsername(),
+        commentAuthor.getPassword(),
+        commentAuthor.isEnabled()
+    );
+  }
 
   /**
    * テストのセットアップが正しく行われていることを検証する。ここが失敗するとまずテスト通らないため
@@ -86,22 +113,7 @@ class ArticleRestControllerCreateArticleCommentTest {
   @DisplayName("POST /articles/{articleId}/comments: 新規コメントの作成に成功する")
   void createArticleComment_201Created() throws Exception {
     // ## Arrange ##
-    // 記事の作成者を登録し、記事を作成
-    var articleAuthor = userService.register("test_username1", "test_password1");
-    var article = articleService.create(
-        articleAuthor.getId(),
-        "test_article_title",
-        "test_article_body"
-    );
-
-    // コメントの作成者を登録し、認証情報を作成
-    var commentAuthor = userService.register("test_username2", "test_password2");
-    var loggedInCommentAuthor = new LoggedInUser(
-        commentAuthor.getId(),
-        commentAuthor.getUsername(),
-        commentAuthor.getPassword(),
-        commentAuthor.isEnabled()
-    );
+    // @BeforeEachに移譲
 
     // 期待されるコメントの内容
     var expectedBody = "記事にコメントをしました";
@@ -174,24 +186,9 @@ class ArticleRestControllerCreateArticleCommentTest {
   @DisplayName("POST /articles/{articleId}/comments: リクエストの body フィールドが空のとき、400 BadRequest")
   void createArticleComments_400BadRequest() throws Exception {
     // ## Arrange ##
-    // 1. 記事作成者を登録し、テスト用の記事を作成する
-    var articleAuthor = userService.register("test_username1", "test_password1");
-    var article = articleService.create(
-        articleAuthor.getId(),
-        "test_article_title",
-        "test_article_body"
-    );
+    // @BeforeEachに移譲
 
-    // 2. コメント作成者を登録し、認証情報として使用する LoggedInUser を作成する
-    var commentAuthor = userService.register("test_username2", "test_password2");
-    var loggedInCommentAuthor = new LoggedInUser(
-        commentAuthor.getId(),
-        commentAuthor.getUsername(),
-        commentAuthor.getPassword(),
-        commentAuthor.isEnabled()
-    );
-
-    // 3. 空の "body" フィールドを含む JSON リクエストボディを定義する
+    // 空の "body" フィールドを含む JSON リクエストボディを定義する
     var bodyJson = """
         {
           "body": ""
