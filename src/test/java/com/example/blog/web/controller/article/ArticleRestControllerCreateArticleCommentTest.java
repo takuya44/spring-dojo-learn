@@ -222,4 +222,78 @@ class ArticleRestControllerCreateArticleCommentTest {
         )))
     ;
   }
+
+  /**
+   * 未ログイン状態で記事コメント作成エンドポイントにリクエストを送信した場合、 サーバーが 401 Unauthorized を返すことを検証するテストです。
+   *
+   * <p>
+   * このテストでは、以下の手順で動作を確認します:
+   * </p>
+   * <ol>
+   *   <li>
+   *     <b>Arrange:</b>
+   *     <ul>
+   *       <li>
+   *         必要なデータ（記事情報など）の初期化は {@code @BeforeEach} にて実施済みです。
+   *       </li>
+   *       <li>
+   *         テスト用のリクエストボディとして、コメントの内容（expectedBody）を含む JSON を定義します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     <b>Act:</b>
+   *     <ul>
+   *       <li>
+   *         未ログイン状態（ユーザー情報を付与しない）で、CSRFトークン付きのPOSTリクエストを実行し、
+   *         指定した記事に対してコメント作成リクエストを送信します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     <b>Assert:</b>
+   *     <ul>
+   *       <li>レスポンスが 401 Unauthorized であることを検証します。</li>
+   *       <li>レスポンスのコンテンツタイプが {@code MediaType.APPLICATION_PROBLEM_JSON} であることを確認します。</li>
+   *       <li>レスポンスのJSON内容に、エラーメッセージやステータスコード、インスタンスの情報が正しく含まれていることを検証します。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   *
+   * @throws Exception リクエスト実行中に発生した例外
+   */
+  @Test
+  @DisplayName("POST /articles/{articleId}/comments: 未ログインのとき、401 Unauthorized を返す")
+  void createArticleComments_401Unauthorized() throws Exception {
+    // ## Arrange ##
+    // @BeforeEachに移譲
+
+    // 期待されるコメントの内容
+    var expectedBody = "記事にコメントをしました";
+    var bodyJson = """
+        {
+          "body": "%s"
+        }
+        """.formatted(expectedBody);
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        post("/articles/{articleId}/comments", article.getId())
+            .with(csrf()) // CSRF トークンを含める
+            // .with(user(loggedInCommentAuthor)) // 未ログイン状態を再現
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(bodyJson)
+    );
+
+    // ## Assert ##
+    actual
+        .andExpect(status().isUnauthorized())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Unauthorized"))
+        .andExpect(jsonPath("$.status").value(401))
+        .andExpect(jsonPath("$.detail").value("リクエストを実行するにはログインが必要です"))
+        .andExpect(jsonPath("$.instance").value(
+            "/articles/%d/comments".formatted(article.getId())
+        ));
+  }
 }
