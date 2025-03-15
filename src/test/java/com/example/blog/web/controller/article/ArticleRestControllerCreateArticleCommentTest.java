@@ -296,4 +296,81 @@ class ArticleRestControllerCreateArticleCommentTest {
             "/articles/%d/comments".formatted(article.getId())
         ));
   }
+
+  /**
+   * POST /articles/{articleId}/comments エンドポイントに対して、CSRFトークンが付加されていない状態でリクエストを送信した場合、 サーバーが 403
+   * Forbidden を返すことを検証するテストです。
+   *
+   * <p>
+   * このテストでは以下の手順で処理を実施します:
+   * </p>
+   * <ol>
+   *   <li>
+   *     <b>Arrange:</b>
+   *     <ul>
+   *       <li>
+   *         テスト対象のデータ（記事情報など）の初期化は {@code @BeforeEach} にて実施済みです。
+   *       </li>
+   *       <li>
+   *         リクエストボディとして、期待するコメント内容を含む JSON を生成します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     <b>Act:</b>
+   *     <ul>
+   *       <li>
+   *         認証済みのユーザー情報は付与しつつも、CSRFトークンを欠いた状態で POST リクエストを送信します。
+   *         これにより、CSRFトークンがない場合のサーバーの動作を確認します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     <b>Assert:</b>
+   *     <ul>
+   *       <li>レスポンスのステータスコードが 403 Forbidden であることを検証します。</li>
+   *       <li>レスポンスのコンテンツタイプが {@code MediaType.APPLICATION_PROBLEM_JSON} であることを確認します。</li>
+   *       <li>レスポンスの JSON に、エラーメッセージやステータスコード、インスタンス情報が正しく含まれていることを検証します。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   *
+   * @throws Exception リクエスト実行中に発生する可能性のある例外
+   */
+  @Test
+  @DisplayName("POST /articles/{articleId}/comments: リクエストに CSRF トークンが付加されていないとき 403 Forbidden を返す")
+  void createArticleComments_403Forbidden() throws Exception {
+    // ## Arrange ##
+    // 初期化処理は @BeforeEach にて実施済み
+
+    // 期待されるコメントの内容
+    var expectedBody = "記事にコメントをしました";
+    var bodyJson = """
+        {
+          "body": "%s"
+        }
+        """.formatted(expectedBody);
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        post("/articles/{articleId}/comments", article.getId())
+            // .with(csrf()) は付与せず、CSRFトークンの欠如をシミュレート
+            .with(user(loggedInCommentAuthor))
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(bodyJson)
+    );
+
+    // ## Assert ##
+    // レスポンスが 403 Forbidden であることを検証
+    actual
+        .andExpect(status().isForbidden())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Forbidden"))
+        .andExpect(jsonPath("$.status").value(403))
+        .andExpect(jsonPath("$.detail").value("CSRFトークンが不正です"))
+        .andExpect(jsonPath("$.instance").value(
+            "/articles/%d/comments".formatted(article.getId())
+        ));
+    ;
+  }
 }
