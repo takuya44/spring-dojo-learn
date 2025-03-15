@@ -79,7 +79,7 @@ class ArticleCommentFormTest {
           + "あいうえおかきくけこさしすせそたちつてとなにぬねの"
           + "あいうえお"
   })
-  void title_success(String body) {
+  void body_success(String body) {
     // ## Arrange ##
     // テスト対象のArticleCommentFormインスタンスを生成（有効なbody値を使用）
     var cut = new ArticleCommentForm(body);
@@ -108,7 +108,7 @@ class ArticleCommentFormTest {
   @ValueSource(strings = {
       ""
   })
-  void title_failure(String body) {
+  void body_failure(String body) {
     // ## Arrange ##
     // テスト対象のArticleCommentFormインスタンスを生成（無効なbody値を使用）
     var cut = new ArticleCommentForm(body);
