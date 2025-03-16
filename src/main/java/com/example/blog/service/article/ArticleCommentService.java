@@ -1,7 +1,9 @@
 package com.example.blog.service.article;
 
 import com.example.blog.repository.article.ArticleCommentRepository;
+import com.example.blog.repository.article.ArticleRepository;
 import com.example.blog.service.DateTimeService;
+import com.example.blog.service.exception.ResourceNotFoundException;
 import com.example.blog.service.user.UserEntity;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -16,28 +18,34 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class ArticleCommentService {
 
+  private final ArticleRepository articleRepository;
   private final ArticleCommentRepository articleCommentRepository;
   private final DateTimeService dateTimeService;
 
   /**
-   * ユーザーが指定した記事にコメントを投稿するメソッドです。
+   * 指定された記事IDに対して、ユーザーがコメントを投稿する処理を実施します。
    *
    * <p>
-   * このメソッドは、ユーザーID、記事ID、及び必須のコメント本文を受け取り、 新規コメントエンティティを生成してデータベースに保存します。<br>
-   * 保存後、DB側で自動生成されたIDやその他の付加情報を反映したエンティティを再取得し返却します。
+   * このメソッドでは、まず指定された記事IDに紐付く記事が存在するかを確認します。 存在しない場合は早期に {@link ResourceNotFoundException}
+   * をスローすることで、 後続のinsert処理でデータベースの外部キー制約違反を発生させる前にエラーパターンを検出します。
+   * これにより、エラーハンドリングが容易になり、問題の原因が明確になります。
    * </p>
    *
    * @param userId    コメント投稿者のユーザーID
-   * @param articleId 対象記事のID
-   * @param body      投稿するコメントの本文（null不可）
-   * @return データベースに保存されたコメントエンティティ
-   * @throws jakarta.validation.ConstraintViolationException {@code body} が null の場合に発生します
+   * @param articleId コメントを投稿する対象の記事ID
+   * @param body      コメントの内容（null不可）
+   * @return 作成された記事コメントエンティティ
+   * @throws ResourceNotFoundException 指定された記事IDに対応する記事が存在しない場合にスローされる
    */
   public ArticleCommentEntity create(
       long userId,
       long articleId,
       @NotNull String body
   ) {
+    // 早期に親リソースである記事の存在を確認し、存在しない場合はResourceNotFoundExceptionをスロー
+    articleRepository.selectById(articleId)
+        .orElseThrow(ResourceNotFoundException::new);
+
     // --- 新規コメントエンティティの生成 ---
     // 関連するArticleEntityおよびUserEntityは、IDのみを設定してインスタンス化
     // これにより、リレーションを表現するための最小限の情報のみを渡す設計

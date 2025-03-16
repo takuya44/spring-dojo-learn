@@ -440,7 +440,8 @@ class ArticleRestControllerCreateArticleCommentTest {
         .andExpect(jsonPath("$.title").value("NotFound"))
         .andExpect(jsonPath("$.status").value(404))
         .andExpect(jsonPath("$.detail").value("リソースが見つかりません"))
-        .andExpect(jsonPath("$.instance").value("/articles/" + invalidArticleId))
+        .andExpect(
+            jsonPath("$.instance").value("/articles/%d/comments".formatted(invalidArticleId)))
     ;
   }
 }
