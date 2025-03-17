@@ -340,14 +340,63 @@ public class ArticleRestController500InternalServerErrorTest {
         .andExpect(jsonPath("$", aMapWithSize(4)));
   }
 
+  /**
+   * POST /articles/{articleId}/comments エンドポイントに対してリクエストを送信した際、 サーバ内部で RuntimeException
+   * が発生した場合に、スタックトレース等の内部情報がレスポンスに露出しないことを検証するテストです。
+   *
+   * <p>
+   * このテストでは、記事コメント作成処理で例外が発生する状況をシミュレートし、エラーレスポンスとして 500 Internal Server Error
+   * が返されるとともに、エラーメッセージに詳細情報が含まれていないことを確認します。
+   * </p>
+   *
+   * <ol>
+   *   <li>
+   *     <b>Arrange:</b>
+   *     <ul>
+   *       <li>
+   *         ユーザーID、記事ID、コメント内容を定義します。
+   *       </li>
+   *       <li>
+   *         {@code articleCommentService.create(userId, articleId, body)} の呼び出し時に {@link RuntimeException} をスローするようにモックを設定し、
+   *         内部エラーをシミュレートします。
+   *       </li>
+   *       <li>
+   *         テスト用のリクエストボディ（JSON形式）を生成します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     <b>Act:</b>
+   *     <ul>
+   *       <li>
+   *         CSRFトークンと認証済みユーザー情報を付与し、指定された記事IDに対して POST リクエストを実行します。
+   *       </li>
+   *     </ul>
+   *   </li>
+   *   <li>
+   *     <b>Assert:</b>
+   *     <ul>
+   *       <li>レスポンスのステータスコードが 500 Internal Server Error であることを検証します。</li>
+   *       <li>レスポンスのコンテンツタイプが {@code MediaType.APPLICATION_PROBLEM_JSON} であることを確認します。</li>
+   *       <li>レスポンスJSONにおいて、スタックトレース等の内部詳細が含まれていない（"detail"が空である）ことを確認します。</li>
+   *       <li>レスポンスの "title"、"status"、"instance" フィールドがそれぞれ期待通りの値であることを検証します。</li>
+   *       <li>レスポンスのJSONオブジェクトが4つのキーのみを含むことを検証し、余分な情報が返されていないことを確認します。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   *
+   * @throws Exception リクエスト実行中に発生する例外
+   */
   @Test
   @DisplayName("POST /articles/{articleId}/comments: 500 InternalServerError で stacktrace が露出しない")
   void createArticleComment_500() throws Exception {
     // ## Arrange ##
+    // テスト用のユーザーID、記事ID、コメント内容を定義
     var userId = 999L;
     var articleId = 9999L;
     var body = "test_body";
 
+    // articleCommentService.createの呼び出し時にRuntimeExceptionをスローし、内部エラーをシミュレートする
     doThrow(RuntimeException.class).when(articleCommentService).create(userId, articleId, body);
 
     // テスト用のリクエストボディを JSON 形式で作成
@@ -366,6 +415,7 @@ public class ArticleRestController500InternalServerErrorTest {
     );
 
     // ## Assert ##
+    // レスポンスが500 Internal Server Errorであり、内部のスタックトレース等が露出していないことを検証
     actual
         .andExpect(status().isInternalServerError())
         .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
@@ -373,6 +423,7 @@ public class ArticleRestController500InternalServerErrorTest {
         .andExpect(jsonPath("$.status").value(500))
         .andExpect(jsonPath("$.detail").isEmpty())
         .andExpect(jsonPath("$.instance").value("/articles/%d/comments".formatted(articleId)))
+        // レスポンスJSONオブジェクトが4つのキーのみを含むことを確認（余分な情報がないことをチェック）
         .andExpect(jsonPath("$", aMapWithSize(4)));
   }
 }
