@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.example.blog.security.LoggedInUser;
+import com.example.blog.service.article.ArticleCommentService;
 import com.example.blog.service.article.ArticleService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,6 +50,9 @@ public class ArticleRestController500InternalServerErrorTest {
    */
   @MockBean
   private ArticleService articleService;
+
+  @MockBean
+  private ArticleCommentService articleCommentService;
 
   /**
    * MockMvc およびモックサービスが正しく初期化されていることを確認するテスト。
@@ -333,6 +337,42 @@ public class ArticleRestController500InternalServerErrorTest {
         .andExpect(jsonPath("$.status").value(500))
         .andExpect(jsonPath("$.detail").isEmpty())
         .andExpect(jsonPath("$.instance").value("/articles/" + articleId))
+        .andExpect(jsonPath("$", aMapWithSize(4)));
+  }
+
+  @Test
+  @DisplayName("POST /articles/{articleId}/comments: 500 InternalServerError で stacktrace が露出しない")
+  void createArticleComment_500() throws Exception {
+    // ## Arrange ##
+    var userId = 999L;
+    var articleId = 9999L;
+    var body = "test_body";
+
+    doThrow(RuntimeException.class).when(articleCommentService).create(userId, articleId, body);
+
+    // テスト用のリクエストボディを JSON 形式で作成
+    var bodyJson = """
+        {
+          "body": "%s"
+        }
+        """.formatted(body);
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        post("/articles/{articleId}/comments", articleId)
+            .with(csrf())
+            .with(user(new LoggedInUser(userId, "test_username", "", true)))
+            .contentType(MediaType.APPLICATION_JSON)
+    );
+
+    // ## Assert ##
+    actual
+        .andExpect(status().isInternalServerError())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Internal Server Error"))
+        .andExpect(jsonPath("$.status").value(500))
+        .andExpect(jsonPath("$.detail").isEmpty())
+        .andExpect(jsonPath("$.instance").value("/articles/%d/comments".formatted(articleId)))
         .andExpect(jsonPath("$", aMapWithSize(4)));
   }
 }
