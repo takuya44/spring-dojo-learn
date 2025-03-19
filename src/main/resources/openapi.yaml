@@ -311,6 +311,30 @@ paths:
           $ref: "#/components/responses/ForbiddenResponse"
         '500':
           $ref: "#/components/responses/InternalServerErrorResponse"
+    get:
+      tags: [ article-comments ]
+      summary: 記事のコメントを取得します
+      description: 指定した記事に対するコメントの一覧を取得します
+      operationId: listArticleComments
+      parameters:
+        - name: articleId
+          in: path
+          description: 記事のID
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleCommentListDTO"
+        '404':
+          $ref: "#/components/responses/NotFoundResponse"
+        '500':
+          $ref: "#/components/responses/InternalServerErrorResponse"
 components:
   schemas:
     # 500エラー
@@ -538,6 +562,14 @@ components:
         createdAt:
           type: string
           format: date-time
+    # 出力
+    ArticleCommentListDTO:
+      type: object
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/ArticleCommentDTO"
   responses:
     InternalServerErrorResponse:
       description: Internal Server Error
