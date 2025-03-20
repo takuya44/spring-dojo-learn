@@ -180,13 +180,7 @@ paths:
       description: 記事の詳細を取得します
       operationId: getArticle
       parameters:
-        - name: articleId
-          in: path
-          description: 記事のID
-          required: true
-          schema:
-            type: integer
-            format: int64
+        - $ref: "#/components/parameters/ArticleId"
       responses:
         '200':
           description: OK
@@ -204,13 +198,7 @@ paths:
       description: 記事を更新します
       operationId: updateArticle
       parameters:
-        - name: articleId
-          in: path
-          description: 記事のID
-          required: true
-          schema:
-            type: integer
-            format: int64
+        - $ref: "#/components/parameters/ArticleId"
       security:
         - cookieAuth: [ ]
         - csrfProtectionHeader: [ ]
@@ -243,13 +231,7 @@ paths:
       description: 記事を削除します
       operationId: deleteArticle
       parameters:
-        - name: articleId
-          in: path
-          description: 記事のID
-          required: true
-          schema:
-            type: integer
-            format: int64
+        - $ref: "#/components/parameters/ArticleId"
       security:
         - cookieAuth: [ ]
         - csrfProtectionHeader: [ ]
@@ -273,13 +255,7 @@ paths:
       summary: 記事のコメントを作成します
       description: 指定した記事に対するコメントをログインユーザーで作成します
       parameters:
-        - name: articleId
-          in: path
-          description: 記事のID
-          required: true
-          schema:
-            type: integer
-            format: int64
+        - $ref: "#/components/parameters/ArticleId"
       requestBody:
         required: true
         content:
@@ -317,13 +293,7 @@ paths:
       description: 指定した記事に対するコメントの一覧を取得します
       operationId: listArticleComments
       parameters:
-        - name: articleId
-          in: path
-          description: 記事のID
-          required: true
-          schema:
-            type: integer
-            format: int64
+        - $ref: "#/components/parameters/ArticleId"
       responses:
         '200':
           description: OK
@@ -601,6 +571,15 @@ components:
         application/problem+json:
           schema:
             $ref: "#/components/schemas/NotFound"
+  parameters:
+    ArticleId:
+      name: articleId
+      in: path
+      description: 記事のID
+      required: true
+      schema:
+        type: integer
+        format: int64
   securitySchemes:
     csrfProtectionHeader:
       description: >
