@@ -6,6 +6,7 @@ import com.example.blog.service.DateTimeService;
 import com.example.blog.service.exception.ResourceNotFoundException;
 import com.example.blog.service.user.UserEntity;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -64,5 +65,9 @@ public class ArticleCommentService {
     return articleCommentRepository
         .selectById(newComment.getId())
         .orElseThrow(() -> new IllegalStateException("never reached"));
+  }
+
+  public List<ArticleCommentEntity> findByArticleId(Long articleId) {
+    return articleCommentRepository.selectByArticleId(articleId);
   }
 }

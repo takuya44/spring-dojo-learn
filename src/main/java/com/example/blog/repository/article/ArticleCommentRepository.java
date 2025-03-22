@@ -1,6 +1,7 @@
 package com.example.blog.repository.article;
 
 import com.example.blog.service.article.ArticleCommentEntity;
+import java.util.List;
 import java.util.Optional;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
@@ -85,4 +86,7 @@ public interface ArticleCommentRepository {
       @Result(column = "comment_author__enabled", property = "author.enabled"),
   })
   Optional<ArticleCommentEntity> selectById(long articleCommentId);
+
+  // TODO: SQL
+  List<ArticleCommentEntity> selectByArticleId(Long articleId);
 }

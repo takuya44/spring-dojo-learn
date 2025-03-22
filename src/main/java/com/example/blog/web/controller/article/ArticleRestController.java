@@ -3,6 +3,7 @@ package com.example.blog.web.controller.article;
 import com.example.blog.api.ArticlesApi;
 import com.example.blog.model.ArticleCommentDTO;
 import com.example.blog.model.ArticleCommentForm;
+import com.example.blog.model.ArticleCommentListDTO;
 import com.example.blog.model.ArticleDTO;
 import com.example.blog.model.ArticleForm;
 import com.example.blog.model.ArticleListDTO;
@@ -318,5 +319,33 @@ public class ArticleRestController implements ArticlesApi {
         .created(location) // HTTP 201 Created ステータスと Location ヘッダーを設定
         .contentType(MediaType.APPLICATION_JSON)
         .body(body);
+  }
+
+  /**
+   * 指定された記事IDに紐づくコメント一覧を取得し、ArticleCommentListDTO としてレスポンスを返却する。
+   *
+   * <p>
+   * ・articleCommentService を利用して指定記事IDのコメントを取得。<br> ・各コメントを ArticleCommentMapper を用いて DTO に変換。<br>
+   * ・変換した DTO を ArticleCommentListDTO にセットし、200 OK のレスポンスとして返却。
+   * </p>
+   *
+   * @param articleId 対象記事のID
+   * @return ArticleCommentListDTO を含む 200 OK レスポンス
+   */
+  @Override
+  public ResponseEntity<ArticleCommentListDTO> listArticleComments(Long articleId) {
+    // サービス層から指定記事のコメントを取得し、各コメントを DTO に変換
+    var comments = articleCommentService.findByArticleId(articleId)
+        .stream()
+        .map(ArticleCommentMapper::toArticleDTO)
+        .toList();
+
+    // 取得したコメントDTOを ArticleCommentListDTO にセット
+    var body = new ArticleCommentListDTO();
+    body.setComments(comments);
+
+    // 200 OK としてレスポンスボディを返却
+    return ResponseEntity
+        .ok(body);
   }
 }
