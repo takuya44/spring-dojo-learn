@@ -87,7 +87,23 @@ public interface ArticleCommentRepository {
   })
   Optional<ArticleCommentEntity> selectById(long articleCommentId);
 
-  
+  /**
+   * 指定された記事IDに紐づく記事コメントと、そのコメントに関連する記事、記事著者、コメント著者の情報を取得する。
+   *
+   * <p>
+   * クエリは以下の情報を取得する：
+   * <ul>
+   *   <li>記事コメント (ID、本文、作成日時)</li>
+   *   <li>関連する記事 (ID、タイトル、本文、作成日時、更新日時)</li>
+   *   <li>記事の著者 (ID、ユーザー名、有効状態)</li>
+   *   <li>コメントの著者 (ID、ユーザー名、有効状態)</li>
+   * </ul>
+   * 結果は記事コメントの作成日時およびIDで昇順にソートされる。
+   * </p>
+   *
+   * @param articleId 対象記事のID
+   * @return 対象記事に紐づく記事コメントの一覧
+   */
   @Select("""
       SELECT
           ac.id         AS article_comment__id
