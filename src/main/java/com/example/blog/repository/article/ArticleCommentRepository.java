@@ -7,16 +7,21 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Result;
+import org.apache.ibatis.annotations.ResultMap;
 import org.apache.ibatis.annotations.Results;
 import org.apache.ibatis.annotations.Select;
 
 /**
- * 記事のコメントをデータベースに保存するリポジトリインターフェース。
+ * 記事コメントのデータ操作を行うリポジトリインターフェース。
  *
- * <p>このインターフェースでは、MyBatis を使用して記事コメントのデータを操作する。</p>
+ * <p>
+ * MyBatis を用いて、記事コメントの挿入や取得を実装する。 結果マッピングは {@code __articleCommentResultMap()} で定義された結果マップを再利用する。
+ * </p>
  */
 @Mapper
 public interface ArticleCommentRepository {
+
+  String ARTICLE_COMMENT_RESULT_MAP_ID = "ARTICLE_COMMENT_RESULT_MAP_ID";
 
   /**
    * 新しいコメントをデータベースに挿入する。
@@ -33,10 +38,22 @@ public interface ArticleCommentRepository {
   void insert(ArticleCommentEntity entity);
 
   /**
-   * 指定された記事コメントIDに基づいて、記事コメントとその関連情報（記事、記事の著者、コメントの著者）を取得するSQL Mapperメソッドです。
+   * 指定された記事コメントIDに対応する記事コメントおよび関連情報を取得する。
+   *
+   * <p>
+   * 取得対象の情報は以下の通り：
+   * <ul>
+   *   <li>記事コメント (ID、本文、作成日時)</li>
+   *   <li>関連記事 (ID、タイトル、本文、作成日時、更新日時)</li>
+   *   <li>記事著者 (ID、ユーザー名、有効状態)</li>
+   *   <li>コメント著者 (ID、ユーザー名、有効状態)</li>
+   * </ul>
+   * </p>
+   *
+   * @param articleCommentId 記事コメントのID
+   * @return 該当記事コメントのエンティティ（見つからなければ空）
    */
   @Select("""
-            <script>
               SELECT
                 -- 記事コメントに関する情報
                   ac.id         AS article_comment__id
@@ -64,41 +81,22 @@ public interface ArticleCommentRepository {
               JOIN users aa ON a.user_id = aa.id
               JOIN users ca ON ac.user_id = ca.id
               WHERE ac.id = #{articleCommentId}
-            </script>
       """)
-  @Results(value = {
-      @Result(column = "article_comment__id", property = "id"),
-      @Result(column = "article_comment__body", property = "body"),
-      @Result(column = "article_comment__created_at", property = "createdAt"),
-
-      @Result(column = "article__id", property = "article.id"),
-      @Result(column = "article__title", property = "article.title"),
-      @Result(column = "article__body", property = "article.body"),
-      @Result(column = "article__created_at", property = "article.createdAt"),
-      @Result(column = "article__updated_at", property = "article.updatedAt"),
-
-      @Result(column = "article_author__id", property = "article.author.id"),
-      @Result(column = "article_author__username", property = "article.author.username"),
-      @Result(column = "article_author__enabled", property = "article.author.enabled"),
-
-      @Result(column = "comment_author__id", property = "author.id"),
-      @Result(column = "comment_author__username", property = "author.username"),
-      @Result(column = "comment_author__enabled", property = "author.enabled"),
-  })
+  @ResultMap(ARTICLE_COMMENT_RESULT_MAP_ID)
   Optional<ArticleCommentEntity> selectById(long articleCommentId);
 
   /**
-   * 指定された記事IDに紐づく記事コメントと、そのコメントに関連する記事、記事著者、コメント著者の情報を取得する。
+   * 指定された記事IDに紐づく記事コメントおよび関連情報を一覧で取得する。
    *
    * <p>
-   * クエリは以下の情報を取得する：
+   * 取得対象は以下の情報：
    * <ul>
    *   <li>記事コメント (ID、本文、作成日時)</li>
-   *   <li>関連する記事 (ID、タイトル、本文、作成日時、更新日時)</li>
-   *   <li>記事の著者 (ID、ユーザー名、有効状態)</li>
-   *   <li>コメントの著者 (ID、ユーザー名、有効状態)</li>
+   *   <li>関連記事 (ID、タイトル、本文、作成日時、更新日時)</li>
+   *   <li>記事著者 (ID、ユーザー名、有効状態)</li>
+   *   <li>コメント著者 (ID、ユーザー名、有効状態)</li>
    * </ul>
-   * 結果は記事コメントの作成日時およびIDで昇順にソートされる。
+   * 結果は記事コメントの作成日時およびIDの昇順でソートされる。
    * </p>
    *
    * @param articleId 対象記事のID
@@ -130,24 +128,44 @@ public interface ArticleCommentRepository {
         WHERE a.id = #{articleId}
         ORDER BY ac.created_at, ac.id
       """)
-  @Results(value = {
+  @ResultMap(ARTICLE_COMMENT_RESULT_MAP_ID)
+  List<ArticleCommentEntity> selectByArticleId(Long articleId);
+
+  /**
+   * 統一した結果マッピング（ARTICLE_COMMENT_RESULT_MAP_ID）の定義用ダミーメソッド。
+   *
+   * <p>
+   * このメソッドは実際のクエリ処理を行わず、@Results アノテーションにより、記事コメントに関する
+   * 各種情報（記事コメント自体、関連する記事、記事の著者、コメントの著者）のフィールドマッピングを定義する。 定義した結果マッピングは、他のクエリメソッド（selectById,
+   * selectByArticleId）で再利用される。
+   * </p>
+   *
+   * @return ダミーの ArticleCommentEntity（返却値は利用されない）
+   */
+  @Select("SELECT '1'")
+  @Results(id = ARTICLE_COMMENT_RESULT_MAP_ID, value = {
+      // 記事コメントの情報
       @Result(column = "article_comment__id", property = "id"),
       @Result(column = "article_comment__body", property = "body"),
       @Result(column = "article_comment__created_at", property = "createdAt"),
 
+      // 関連する記事の情報
       @Result(column = "article__id", property = "article.id"),
       @Result(column = "article__title", property = "article.title"),
       @Result(column = "article__body", property = "article.body"),
       @Result(column = "article__created_at", property = "article.createdAt"),
       @Result(column = "article__updated_at", property = "article.updatedAt"),
 
+      // 記事の著者情報
       @Result(column = "article_author__id", property = "article.author.id"),
       @Result(column = "article_author__username", property = "article.author.username"),
       @Result(column = "article_author__enabled", property = "article.author.enabled"),
 
+      // コメントの著者情報
       @Result(column = "comment_author__id", property = "author.id"),
       @Result(column = "comment_author__username", property = "author.username"),
       @Result(column = "comment_author__enabled", property = "author.enabled"),
   })
-  List<ArticleCommentEntity> selectByArticleId(Long articleId);
+  ArticleCommentEntity __articleCommentResultMap();
+
 }
