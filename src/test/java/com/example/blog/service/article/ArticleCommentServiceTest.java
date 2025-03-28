@@ -148,4 +148,65 @@ class ArticleCommentServiceTest {
       cut.create(commentAuthor.getId(), invalidArticleId, expectedComment);
     });
   }
+
+  /**
+   * findByArticleId_success: 記事IDを指定して、対象記事に紐づくコメント一覧を取得できることを検証するテスト。
+   *
+   * <p>
+   * 【テストの流れ】
+   * <ol>
+   *   <li><b>Arrange:</b>
+   *     <ul>
+   *       <li>固定日時を返すようにモックされた DateTimeService を設定。</li>
+   *       <li>記事作成者を登録し、記事を作成する。</li>
+   *       <li>2件のコメントを、異なるコメント作成者で作成する。</li>
+   *     </ul>
+   *   </li>
+   *   <li><b>Act:</b>
+   *     <ul>
+   *       <li>対象記事IDに紐づくコメント一覧を取得する。</li>
+   *     </ul>
+   *   </li>
+   *   <li><b>Assert:</b>
+   *     <ul>
+   *       <li>取得したコメント一覧のサイズが 2 であることを確認する。</li>
+   *       <li>取得した1件目と2件目のコメントが、それぞれ期待したコメントと一致することを確認する。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   * </p>
+   *
+   * @throws Exception リクエスト実行中に発生する例外
+   */
+  @Test
+  @DisplayName("findByArticleId: 記事IDを指定して記事コメントの一覧を取得できる")
+  void findByArticleId_success() {
+    // ## Arrange ##
+    // 固定された日時をモックで設定
+    when(mockDateTimeService.now())
+        .thenReturn(TestDateTimeUtil.of(2020, 1, 2, 10, 20))
+        .thenReturn(TestDateTimeUtil.of(2021, 1, 2, 10, 20))
+        .thenReturn(TestDateTimeUtil.of(2023, 1, 2, 10, 20));
+
+    // テスト用のユーザーと記事を作成
+    var articleAuthor = userService.register("test_username1", "test_password");
+    var article = articleService.create(articleAuthor.getId(), "test_title", "test_body");
+
+    // 2件のコメントを作成（それぞれ別のコメント作成者）
+    var commentAuthor1 = userService.register("test_username2", "test_password");
+    var comment1 = cut.create(commentAuthor1.getId(), article.getId(), "1 コメントしました");
+
+    var commentAuthor2 = userService.register("test_username3", "test_password");
+    var comment2 = cut.create(commentAuthor2.getId(), article.getId(), "2 コメントしました");
+
+    // ## Act ##
+    var actual = cut.findByArticleId(article.getId());
+
+    // ## Assert ##
+    // 取得結果のサイズと内容を検証
+    // controllerで取得したオブジェクトの値が期待された値かどうか検証済みなので簡単に済ませる
+    assertThat(actual).hasSize(2);
+    assertThat(actual.get(0)).isEqualTo(comment1);
+    assertThat(actual.get(1)).isEqualTo(comment2);
+  }
 }
