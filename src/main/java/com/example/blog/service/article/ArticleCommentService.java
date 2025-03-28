@@ -67,6 +67,17 @@ public class ArticleCommentService {
         .orElseThrow(() -> new IllegalStateException("never reached"));
   }
 
+  /**
+   * 指定された記事IDに紐づく記事コメントの一覧を取得する。
+   *
+   * <p>
+   * このメソッドは、articleCommentRepository.selectByArticleId(articleId) を呼び出し、
+   * 対象記事に関連する全てのコメントエンティティを返す。取得結果は、クエリ側で昇順にソートされる。
+   * </p>
+   *
+   * @param articleId 対象記事のID
+   * @return 対象記事に紐づく記事コメントのリスト
+   */
   public List<ArticleCommentEntity> findByArticleId(Long articleId) {
     return articleCommentRepository.selectByArticleId(articleId);
   }
