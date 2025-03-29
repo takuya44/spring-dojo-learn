@@ -28,49 +28,107 @@ class ArticleCommentRepositoryTest {
   @Autowired
   private ArticleRepository articleRepository;
 
-  // テストで使用する期待値としての記事コメントエンティティを格納するフィールド
-  private ArticleCommentEntity expectedComment;
+  // テスト期待値フィールド（検索対象とダミーデータ用）
+  private ArticleEntity article1;
+  private ArticleCommentEntity article1Comment1;
+  private ArticleCommentEntity article1Comment2;
+  private ArticleCommentEntity article2Comment1;
 
   @BeforeEach
   void beforeEach() {
-    // 記事の著者となるユーザーエンティティを生成（IDはDB自動生成）
-    var articleAuthor = new UserEntity(
+    // 【方針】
+    // - article1 に対するコメント (article1Comment1, article1Comment2) は検索対象
+    // - article2 に対するコメント (article2Comment1) はダミーデータ
+
+    // ---- article1 用データ生成 ----
+    // 記事作成者生成・登録 (ID: 自動生成)
+    var articleAuthor1 = new UserEntity(
         null, // IDは自動生成のためnull
         "test_username1", // ユーザー名
         "test_password1", // パスワード（テスト用）
         true              // ユーザーが有効であることを示すフラグ
     );
-    // ユーザー情報をデータベースに登録
-    userRepository.insert(articleAuthor);
+    userRepository.insert(articleAuthor1);
 
-    // テスト用の記事エンティティを生成
-    var article = new ArticleEntity(
+    // article1 生成・登録
+    article1 = new ArticleEntity(
         null,                                  // IDは自動生成
         "test_title",                             // 記事のタイトル
         "test_body",                              // 記事の本文
-        articleAuthor,                            // 記事の著者
+        articleAuthor1,                            // 記事の著者
         TestDateTimeUtil.of(2020, 1, 1, 10, 30), // 記事の作成日時
         TestDateTimeUtil.of(2021, 1, 1, 10, 30) // 記事の更新日時
     );
-    // 記事情報をデータベースに登録
-    articleRepository.insert(article);
+    articleRepository.insert(article1);
 
-    // コメント投稿者となる別のユーザーエンティティを生成
-    var commentAuthor = new UserEntity(
+    // article1 用コメント投稿者生成・登録
+    var commentAuthor11 = new UserEntity(
         null,             // IDは自動生成
-        "test_username2",    // ユーザー名
-        "test_password2",    // パスワード
+        "test_username11",   // ユーザー名
+        "test_password",     // パスワード
         true                 // ユーザーが有効であることを示すフラグ
     );
-    // コメント投稿者のユーザー情報をデータベースに登録
-    userRepository.insert(commentAuthor);
+    userRepository.insert(commentAuthor11);
+    var commentAuthor12 = new UserEntity(
+        null,             // IDは自動生成
+        "test_username12",   // ユーザー名
+        "test_password",     // パスワード
+        true                 // ユーザーが有効であることを示すフラグ
+    );
+    userRepository.insert(commentAuthor12);
 
-    // 記事コメントエンティティを生成（IDは自動生成のためnull）
-    expectedComment = new ArticleCommentEntity(
+    // article1 のコメント生成（検索対象）
+    article1Comment1 = new ArticleCommentEntity(
         null,                                 // コメントIDはDB自動生成
         "test_body",                             // コメントの本文
-        article,                                 // コメント対象の記事
-        commentAuthor,                           // コメント投稿者
+        article1,                                 // コメント対象の記事
+        commentAuthor11,                           // コメント投稿者
+        TestDateTimeUtil.of(2022, 1, 1, 10, 31) // コメントの投稿日時
+    );
+    article1Comment2 = new ArticleCommentEntity(
+        null,                                 // コメントIDはDB自動生成
+        "test_body",                             // コメントの本文
+        article1,                                 // コメント対象の記事
+        commentAuthor12,                           // コメント投稿者
+        TestDateTimeUtil.of(2022, 1, 1, 10, 31) // コメントの投稿日時
+    );
+
+    // ---- article2 用ダミーデータ生成 ----
+    // 記事作成者生成・登録
+    var articleAuthor2 = new UserEntity(
+        null, // IDは自動生成のためnull
+        "test_username2", // ユーザー名
+        "test_password2", // パスワード（テスト用）
+        true              // ユーザーが有効であることを示すフラグ
+    );
+    userRepository.insert(articleAuthor2);
+
+    // article2 生成・登録
+    var article2 = new ArticleEntity(
+        null,                                  // IDは自動生成
+        "test_title",                             // 記事のタイトル
+        "test_body",                              // 記事の本文
+        articleAuthor2,                            // 記事の著者
+        TestDateTimeUtil.of(2020, 1, 1, 10, 30), // 記事の作成日時
+        TestDateTimeUtil.of(2021, 1, 1, 10, 30) // 記事の更新日時
+    );
+    articleRepository.insert(article2);
+
+    // article2 用コメント投稿者生成・登録
+    var commentAuthor21 = new UserEntity(
+        null,             // IDは自動生成
+        "test_username21",   // ユーザー名
+        "test_password",     // パスワード
+        true                 // ユーザーが有効であることを示すフラグ
+    );
+    userRepository.insert(commentAuthor21);
+
+    // article2 のコメント生成（ダミーデータ）
+    article2Comment1 = new ArticleCommentEntity(
+        null,                                 // コメントIDはDB自動生成
+        "test_body",                             // コメントの本文
+        article2,                                 // コメント対象の記事
+        commentAuthor21,                           // コメント投稿者
         TestDateTimeUtil.of(2022, 1, 1, 10, 31) // コメントの投稿日時
     );
   }
@@ -100,11 +158,11 @@ class ArticleCommentRepositoryTest {
 
     // ## Act ##
     // テスト対象メソッドを使用して、記事コメントエンティティをデータベースに挿入する
-    cut.insert(expectedComment);
+    cut.insert(article1Comment1);
 
     // ## Assert ##
     // 挿入した記事コメントエンティティをIDで取得し、期待値と一致するかを検証する
-    var actualOpt = cut.selectById(expectedComment.getId());
+    var actualOpt = cut.selectById(article1Comment1.getId());
     assertThat(actualOpt).hasValueSatisfying(actualEntity -> {
       // 再帰的な比較を行い、パスワード情報は比較対象から除外して一致していることを確認
       assertThat(actualEntity)
@@ -113,7 +171,7 @@ class ArticleCommentRepositoryTest {
               "author.password", // コメント投稿者のパスワードは比較対象外
               "article.author.password"// 記事著者のパスワードも比較対象外
           )
-          .isEqualTo(expectedComment);
+          .isEqualTo(article1Comment1);
     });
   }
 
@@ -143,11 +201,11 @@ class ArticleCommentRepositoryTest {
   void selectById_success() {
     // ## Arrange ##
     // テスト対象の環境を整えるため、事前に期待値として定義した記事コメントエンティティをデータベースに登録
-    cut.insert(expectedComment);
+    cut.insert(article1Comment1);
 
     // ## Act ##
     // 登録済みの記事コメントのIDを用いてselectByIdメソッドを呼び出し、データベースから記事コメントエンティティを取得
-    var actualOpt = cut.selectById(expectedComment.getId());
+    var actualOpt = cut.selectById(article1Comment1.getId());
 
     // ## Assert ##
     // 取得したOptionalに値が存在することを前提に、実際に取得された記事コメントエンティティと期待値(expectedComment)が一致するかを検証
@@ -159,7 +217,7 @@ class ArticleCommentRepositoryTest {
               "author.password", // コメント投稿者のパスワードは比較対象外
               "article.author.password"// 記事著者のパスワードも比較対象外
           )
-          .isEqualTo(expectedComment);
+          .isEqualTo(article1Comment1);
     });
   }
 
@@ -187,7 +245,7 @@ class ArticleCommentRepositoryTest {
   @DisplayName("selectById：指定した ID の記事コメントが存在しないとき、Optional.empty を返す")
   void selectById_returnEmpty() {
     // ## Arrange ##
-    cut.insert(expectedComment);// dummy Record
+    cut.insert(article1Comment1);// dummy Record
     var notInsertedId = 0;
 
     // ## Act ##
@@ -196,5 +254,60 @@ class ArticleCommentRepositoryTest {
 
     // ## Assert ##
     assertThat(actualOpt).isEmpty();
+  }
+
+  /**
+   * selectByArticleId_success: 指定した記事IDに対して、記事コメントが存在する場合、正しい記事コメントのリストが返されることを検証するテスト。
+   *
+   * <p>
+   * 【テストの流れ】
+   * <ol>
+   *   <li><b>Arrange:</b>
+   *     <ul>
+   *       <li>記事1に属するコメント（article1Comment1、article1Comment2）をデータベースに挿入。</li>
+   *       <li>記事2に属するコメント（article2Comment1）も挿入し、対象記事のコメントのみ取得されることを確認。</li>
+   *     </ul>
+   *   </li>
+   *   <li><b>Act:</b>
+   *     <ul>
+   *       <li>対象記事（article1）のIDを指定して、selectByArticleId を実行。</li>
+   *     </ul>
+   *   </li>
+   *   <li><b>Assert:</b>
+   *     <ul>
+   *       <li>返却されるコメントリストのサイズが2件であることを検証。</li>
+   *       <li>各コメントの内容が、予め挿入した記事1のコメントと一致することを、再帰的比較（パスワードフィールドは除外）で確認。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   * </p>
+   */
+  @Test
+  @DisplayName("selectByArticleId：指定した記事IDにコメントが存在するとき、記事コメントのリストを返す")
+  void selectByArticleId_success() {
+    // ## Arrange ##
+    cut.insert(article1Comment1);
+    cut.insert(article1Comment2);
+    cut.insert(article2Comment1);
+
+    // ## Act ##
+    // 記事1に属するコメントを取得
+    var actual = cut.selectByArticleId(article1.getId());
+
+    // ## Assert ##
+    // 取得したコメントリストのサイズと内容を検証
+    assertThat(actual).hasSize(2);
+    assertThat(actual.get(0))
+        .usingRecursiveComparison()
+        .ignoringFields(
+            "author.password",
+            "article.author.password")
+        .isEqualTo(article1Comment1);
+    assertThat(actual.get(1))
+        .usingRecursiveComparison()
+        .ignoringFields(
+            "author.password",
+            "article.author.password")
+        .isEqualTo(article1Comment2);
   }
 }
