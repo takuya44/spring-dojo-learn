@@ -71,14 +71,20 @@ public class ArticleCommentService {
    * 指定された記事IDに紐づく記事コメントの一覧を取得する。
    *
    * <p>
-   * このメソッドは、articleCommentRepository.selectByArticleId(articleId) を呼び出し、
-   * 対象記事に関連する全てのコメントエンティティを返す。取得結果は、クエリ側で昇順にソートされる。
+   * まず、指定された記事IDに対応する記事が存在するかどうかを確認する。 存在しない場合は {@link ResourceNotFoundException} をスローする。
+   * 存在する場合は、その記事に紐づく記事コメントのリストを返す。
    * </p>
    *
    * @param articleId 対象記事のID
    * @return 対象記事に紐づく記事コメントのリスト
+   * @throws ResourceNotFoundException 指定された記事が存在しない場合
    */
   public List<ArticleCommentEntity> findByArticleId(Long articleId) {
+    // 指定された記事が存在するかチェック。存在しない場合は例外をスローする。
+    articleRepository.selectById(articleId)
+        .orElseThrow(ResourceNotFoundException::new);
+
+    // 記事が存在する場合、その記事に紐づくコメントを取得して返却する。
     return articleCommentRepository.selectByArticleId(articleId);
   }
 }

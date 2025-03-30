@@ -209,4 +209,38 @@ class ArticleCommentServiceTest {
     assertThat(actual.get(0)).isEqualTo(comment1);
     assertThat(actual.get(1)).isEqualTo(comment2);
   }
+
+  /**
+   * findByArticleId_invalidArticleId: 指定された記事IDに対応する記事が存在しない場合に、ResourceNotFoundException
+   * をスローすることを検証するテスト。
+   *
+   * <p>
+   * 【テストの流れ】
+   * <ol>
+   *   <li><b>Arrange:</b>
+   *     <ul>
+   *       <li>存在しない記事ID (例: 0L) を設定する。</li>
+   *     </ul>
+   *   </li>
+   *   <li><b>Act & Assert:</b>
+   *     <ul>
+   *       <li>findByArticleId メソッドを呼び出し、ResourceNotFoundException がスローされることを assertThrows で検証する。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   * </p>
+   */
+  @Test
+  @DisplayName("findByArticleId: 指定された記事IDの記事が存在しないとき、ResourceNotFoundException を投げる")
+  void findByArticleId_invalidArticleId() {
+    // ## Arrange ##
+    // 存在しない記事IDを設定
+    var invalidArticleId = 0L;
+
+    // Act & Assert:
+    // 無効な記事IDに対して、findByArticleId メソッド呼び出し時に例外がスローされることを検証
+    assertThrows(ResourceNotFoundException.class, () -> {
+      cut.findByArticleId(invalidArticleId);
+    });
+  }
 }
