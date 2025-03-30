@@ -30,6 +30,7 @@ class ArticleCommentRepositoryTest {
 
   // テスト期待値フィールド（検索対象とダミーデータ用）
   private ArticleEntity article1;
+  private ArticleEntity article2;
   private ArticleCommentEntity article1Comment1;
   private ArticleCommentEntity article1Comment2;
   private ArticleCommentEntity article2Comment1;
@@ -104,7 +105,7 @@ class ArticleCommentRepositoryTest {
     userRepository.insert(articleAuthor2);
 
     // article2 生成・登録
-    var article2 = new ArticleEntity(
+    article2 = new ArticleEntity(
         null,                                  // IDは自動生成
         "test_title",                             // 記事のタイトル
         "test_body",                              // 記事の本文
@@ -309,5 +310,92 @@ class ArticleCommentRepositoryTest {
             "author.password",
             "article.author.password")
         .isEqualTo(article1Comment2);
+  }
+
+  /**
+   * selectByArticleId_invalidArticleId: 指定された記事IDが存在しない場合、空のリストを返すことを検証するテスト。
+   *
+   * <p>
+   * 【テストの流れ】
+   * <ol>
+   *   <li><b>Arrange:</b>
+   *     <ul>
+   *       <li>無効な記事ID (0L) を設定。</li>
+   *       <li>検索対象となる記事1およびダミー記事2のコメントを登録。</li>
+   *     </ul>
+   *   </li>
+   *   <li><b>Act:</b>
+   *     <ul>
+   *       <li>無効な記事IDを指定して記事コメントのリストを取得。</li>
+   *     </ul>
+   *   </li>
+   *   <li><b>Assert:</b>
+   *     <ul>
+   *       <li>取得結果が空のリストであることを検証。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   * </p>
+   */
+  @Test
+  @DisplayName("selectByArticleId：指定した記事IDが存在しないとき、空のリストを返す")
+  void selectByArticleId_invalidArticleId() {
+    // ## Arrange ##
+    // 無効な記事IDを設定し、コメントデータを挿入
+    var invalidArticleId = 0L;
+    cut.insert(article1Comment1);
+    cut.insert(article1Comment2);
+    cut.insert(article2Comment1);
+
+    // ## Act ##
+    // 無効な記事IDに対して記事コメントのリストを取得
+    var actual = cut.selectByArticleId(invalidArticleId);
+
+    // ## Assert ##
+    // 取得結果が空であることを確認
+    assertThat(actual).isEmpty();
+  }
+
+  /**
+   * selectByArticleId_articleDoesNotHaveComments: 指定された記事IDに対して、コメントが存在しない場合に空のリストを返すことを検証するテスト。
+   *
+   * <p>
+   * 【テストの流れ】
+   * <ol>
+   *   <li><b>Arrange:</b>
+   *     <ul>
+   *       <li>記事1のコメント (article1Comment1 と article1Comment2) を挿入する。</li>
+   *       <li>記事2のコメントは挿入せず、記事2がコメントを持たない状態を再現する。</li>
+   *     </ul>
+   *   </li>
+   *   <li><b>Act:</b>
+   *     <ul>
+   *       <li>記事2のIDを指定して、selectByArticleId メソッドを呼び出し、記事2に紐づくコメントリストを取得する。</li>
+   *     </ul>
+   *   </li>
+   *   <li><b>Assert:</b>
+   *     <ul>
+   *       <li>取得したリストが空であることを確認する。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   * </p>
+   */
+  @Test
+  @DisplayName("selectByArticleId：指定した記事IDにコメントが存在しないとき、空のリストを返す")
+  void selectByArticleId_articleDoesNotHaveComments() {
+    // ## Arrange ##
+    // 記事1のコメントは挿入、記事2のコメントは挿入しない（dummy）
+    cut.insert(article1Comment1);
+    cut.insert(article1Comment2);
+    // cut.insert(article2Comment1); // 記事2にはコメントを挿入しない
+
+    // ## Act ##
+    // 記事2のIDを指定してコメントリストを取得
+    var actual = cut.selectByArticleId(article2.getId());
+
+    // ## Assert ##
+    // 取得結果が空のリストであることを検証
+    assertThat(actual).isEmpty();
   }
 }
