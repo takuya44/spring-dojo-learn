@@ -154,4 +154,59 @@ class ArticleRestControllerListArticleCommentsTest {
         .andExpect(jsonPath("$.comments[1].createdAt").value(comment2.getCreatedAt().toString()))
     ;
   }
+
+  /**
+   * GET /articles/{articleId}/comments のテスト:
+   * <p>
+   * 指定された記事IDが存在しない場合、404 Not Found を返すことを検証するテスト。
+   * </p>
+   * <p>
+   * 【テストの流れ】
+   * <ol>
+   *   <li><b>Arrange:</b>
+   *     <ul>
+   *       <li>存在しない記事ID (例: 0) を定義する。</li>
+   *     </ul>
+   *   </li>
+   *   <li><b>Act:</b>
+   *     <ul>
+   *       <li>存在しない記事IDに対して GET リクエストを送信し、コメント一覧の取得を試みる。</li>
+   *     </ul>
+   *   </li>
+   *   <li><b>Assert:</b>
+   *     <ul>
+   *       <li>レスポンスの HTTP ステータスが 404 であることを確認する。</li>
+   *       <li>レスポンスの Content-Type が {@code MediaType.APPLICATION_PROBLEM_JSON} であることを検証する。</li>
+   *       <li>JSON 内の {@code title}, {@code status}, {@code detail}, {@code instance} フィールドが期待通りの値になっていることを確認する。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   * </p>
+   *
+   * @throws Exception リクエスト実行中に発生する例外
+   */
+  @Test
+  @DisplayName("GET /articles/{articleId}/comments: 指定されたIDの記事が存在しないとき、404を返す")
+  void listArticleComments_404NotFound() throws Exception {
+    // ## Arrange ##
+    // 存在しない記事IDを定義
+    var invalidArticleId = 0;
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        get("/articles/{articleId}/comments", invalidArticleId)
+            .contentType(MediaType.APPLICATION_JSON)
+    );
+
+    // ## Assert ##
+    actual
+        .andExpect(status().isNotFound())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("NotFound"))
+        .andExpect(jsonPath("$.status").value(404))
+        .andExpect(jsonPath("$.detail").value("リソースが見つかりません"))
+        .andExpect(
+            jsonPath("$.instance").value("/articles/%d/comments".formatted(invalidArticleId)))
+    ;
+  }
 }
