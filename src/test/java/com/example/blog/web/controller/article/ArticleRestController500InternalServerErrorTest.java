@@ -426,4 +426,68 @@ public class ArticleRestController500InternalServerErrorTest {
         // レスポンスJSONオブジェクトが4つのキーのみを含むことを確認（余分な情報がないことをチェック）
         .andExpect(jsonPath("$", aMapWithSize(4)));
   }
+
+  /**
+   * GET /articles/{articleId}/comments エンドポイントのテスト:
+   * <p>
+   * 目的: 指定された記事IDに対して、内部処理で例外が発生した場合に、 500 Internal Server Error
+   * を返し、スタックトレースなどの内部詳細がレスポンスに含まれないことを検証する。
+   * </p>
+   *
+   * <p>
+   * 【テストの流れ】
+   * <ol>
+   *   <li><b>Arrange:</b>
+   *     <ul>
+   *       <li>存在しない記事IDとして 9999L を指定。</li>
+   *       <li>articleCommentService.findByArticleId(articleId) 呼び出し時に RuntimeException をスローするようにモック設定。</li>
+   *     </ul>
+   *   </li>
+   *   <li><b>Act:</b>
+   *     <ul>
+   *       <li>GET リクエストを送信して、エラー発生時のレスポンスを取得する。</li>
+   *     </ul>
+   *   </li>
+   *   <li><b>Assert:</b>
+   *     <ul>
+   *       <li>HTTPステータスが 500 であることを確認。</li>
+   *       <li>Content-Type が MediaType.APPLICATION_PROBLEM_JSON であることを検証。</li>
+   *       <li>JSON の "title" が "Internal Server Error"、"status" が 500 であること。</li>
+   *       <li>エラーメッセージの "detail" が空で、内部情報が露出していないことを確認。</li>
+   *       <li>レスポンスの "instance" が "/articles/{articleId}/comments" となっていることを検証。</li>
+   *       <li>レスポンスオブジェクトが4つのキーのみを持つことを確認（余分な情報が返されない）。</li>
+   *     </ul>
+   *   </li>
+   * </ol>
+   * </p>
+   *
+   * @throws Exception リクエスト実行中に発生する例外
+   */
+  @Test
+  @DisplayName("GET /articles/{articleId}/comments: 500 InternalServerError で stacktrace が露出しない")
+  void listArticleComments_500() throws Exception {
+    // ## Arrange ##
+    var articleId = 9999L;
+
+    // articleCommentService.findByArticleId(articleId) が呼ばれたときに RuntimeException をスローするようモック設定
+    when(articleCommentService.findByArticleId(articleId)).thenThrow(RuntimeException.class);
+    // 別の記載例（メソッドの戻り値がない時に使える）：doThrow(RuntimeException.class).when(articleCommentService).findByArticleId(articleId);
+
+    // ## Act ##
+    var actual = mockMvc.perform(
+        get("/articles/{articleId}/comments", articleId)
+            .contentType(MediaType.APPLICATION_JSON)
+    );
+
+    // ## Assert ##
+    // 500 Internal Server Error レスポンスと、内部詳細が露出しない（"detail" が空）のを検証
+    actual
+        .andExpect(status().isInternalServerError())
+        .andExpect(content().contentType(MediaType.APPLICATION_PROBLEM_JSON))
+        .andExpect(jsonPath("$.title").value("Internal Server Error"))
+        .andExpect(jsonPath("$.status").value(500))
+        .andExpect(jsonPath("$.detail").isEmpty())
+        .andExpect(jsonPath("$.instance").value("/articles/%d/comments".formatted(articleId)))
+        .andExpect(jsonPath("$", aMapWithSize(4)));
+  }
 }
